@@ -1,4 +1,4 @@
-from api.data_access.access import DB
+from data_access.access import DB
 import re
 
 class Logic:
@@ -12,7 +12,7 @@ class Logic:
             self.db.connect()
             insert_id = self.db.insert_one(collection_name, data)
             self.db.close()
-            return insert_id
+            return str(insert_id)
 
         except Exception as e:
             print(f"Error inserting data into {collection_name}: {e}")
@@ -32,6 +32,32 @@ class Logic:
             self.db.close()
             return None
     
+    def get_by_query(self, modelName, query):
+        collection_name = self.get_collection_name(modelName)
+        try:
+            self.db.connect()
+            collection = self.db.get_collection(collection_name)
+            documents = self.map_db_id_to_model_id(list(collection.find(query)))
+            self.db.close()
+            return documents
+        except Exception as e:
+            print(f"Error retrieving data from {collection_name} with query {query}: {e}")
+            self.db.close()
+            return None
+    
+    def update(self, modelName, query, update_data):
+        collection_name = self.get_collection_name(modelName)
+        try:
+            self.db.connect()
+            collection = self.db.get_collection(collection_name)
+            result = collection.update_many(query, {'$set': update_data})
+            self.db.close()
+            return result.modified_count
+        except Exception as e:
+            print(f"Error updating data in {collection_name} with query {query}: {e}")
+            self.db.close()
+            return None
+        
     def map_db_id_to_model_id(self, documents):
         for doc in documents:
             if '_id' in doc:

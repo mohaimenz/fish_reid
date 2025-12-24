@@ -15,7 +15,7 @@ class FishEmbedding(BaseModel):
     id: str
     fish_id: str
     embeddings: str
-    model_name: str # ai model that generated the embeddings
+    ai_model_name: str # ai model that generated the embeddings
     date_created: datetime
 
 class FishPairLogs(BaseModel):
@@ -36,15 +36,19 @@ class Sites(BaseModel):
     user_id: str
 
 class Users(BaseModel):
-    id: None | str
+    id: Optional[PyObjectId] = Field(alias="_id", default = None)
     name: str
     email: str
     password: str
-    type: str  # e.g., admin, regular
-    date_created: datetime
-    date_modified: datetime
-    last_login: datetime
-    is_active: bool
+    type: Optional[str] = "pu"  # e.g., admin, regular
+    date_created: Optional[datetime] = None
+    date_modified: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    is_active: Optional[bool] = True
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
 
 class UserUploads(BaseModel):
     id: str #(file_name would be same as id.ext)
