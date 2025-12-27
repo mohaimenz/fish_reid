@@ -5,7 +5,7 @@ from routes.user import user_routes
 api_app = FastAPI(title="api app")
 origins = [
     "http://127.0.0.1:3000",
-    "*"
+    "http://localhost:3000"
 ]
 api_app.add_middleware(
     CORSMiddleware,
