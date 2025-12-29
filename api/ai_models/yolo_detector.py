@@ -4,7 +4,7 @@ from ultralytics import YOLO
 from PIL import Image
 import yaml
 
-def get_predictions(image_paths):
+def get_predictions(photo_ids):
     try:
         #load config from yaml
         config_path = Path(__file__).parent / "config.yaml"
