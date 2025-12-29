@@ -6,6 +6,7 @@ import jwt
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+from auth import Auth
 
 user_routes = APIRouter()
 
@@ -20,9 +21,7 @@ async def Login(data: UserLogin):
             return {'status': 'failure', 'message': 'Invalid credentials'}
         else:
             Logic().update("Users", {"_id": user[0]['id']}, {"last_login": datetime.utcnow()})  
-            load_dotenv()
-            SECRET_KEY = os.getenv("SECRET_KEY")
-            token = jwt.encode({"user_id": user[0]['id']}, SECRET_KEY, algorithm="HS256")
+            token = Auth().generate_token(user[0]['id'])
             return {'status': 'success', 'message': 'Login successful', 'user': user[0], 'token': token}
         
     else:

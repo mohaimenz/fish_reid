@@ -1,0 +1,2 @@
+model_path: yolo-v11-n-4.pt
+conf_threshold: 0.7

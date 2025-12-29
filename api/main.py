@@ -1,6 +1,8 @@
 from fastapi import FastAPI 
 from fastapi.middleware.cors import CORSMiddleware
 from routes.user import user_routes
+from routes.detector import detector_routes
+from routes.photo import photo_routes
 
 api_app = FastAPI(title="api app")
 origins = [
@@ -20,6 +22,8 @@ async def Message():
     return {'data': "I am happily serving from the API app!"} 
 
 api_app.include_router(user_routes, prefix="/user", tags=["user"])
+api_app.include_router(detector_routes, prefix="/detector", tags=["detector"])
+api_app.include_router(photo_routes, prefix="/photo", tags=["photo"])
 
-app = FastAPI(title="main app")
+app = FastAPI(docs_url="/docs", redoc_url="/redoc", title="main app")
 app.mount("/", api_app)

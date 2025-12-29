@@ -61,8 +61,9 @@ class Annotations(BaseModel):
     user_upload_id: str
     x_min: float
     y_min: float
-    h: float
-    w: float
+    height: float
+    width: float
+    class_name: int
     confidence: float
 
 class IdentificationLogs(BaseModel):
