@@ -59,6 +59,7 @@ const Login = () => {
     
     try {
       const response = await authService.login(formData)
+      // console.log('Login successful:', response)
       setAuth(response.user, response.token)
       navigate('/upload')
     } catch (error) {

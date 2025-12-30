@@ -40,6 +40,7 @@ class Logic:
             documents = self.map_db_id_to_model_id(list(collection.find(query)))
             self.db.close()
             return documents
+        
         except Exception as e:
             print(f"Error retrieving data from {collection_name} with query {query}: {e}")
             self.db.close()

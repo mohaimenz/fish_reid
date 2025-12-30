@@ -3,10 +3,12 @@ import apiClient from './apiClient'
 const workflowService = {
   // Upload images with metadata
   uploadImages: async (formData) => {
+    alert(localStorage.getItem('token') || '')
     const endpoint = import.meta.env.VITE_UPLOAD_ENDPOINT || '/upload'
     const response = await apiClient.post(endpoint, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'token': localStorage.getItem('token') || ''
       },
     })
     return response.data

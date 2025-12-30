@@ -1,16 +1,19 @@
-from dotenv import load_dotenv
-import jwt
 import os
+from dotenv import load_dotenv
+from pathlib import Path
+import jwt
+import bcrypt
 from datetime import datetime, timedelta
 from data_access.logic import Logic
 from data_access.models import Users
+
 class Auth:
     secret_key = None
     algorithm = "HS256"
     token_expiration_minutes = 60 # Token valid for 60 minutes
     def __init__(self):
-        load_dotenv()
-        self.secret_key = os.getenv("SECRET_KEY")
+        load_dotenv(dotenv_path=Path(__file__).parent / "data_access" / ".env")
+        self.secret_key = os.getenv("API_TOKEN_KEY")
 
     def generate_token(self, user_id: str) -> str:
         payload = {
@@ -20,6 +23,13 @@ class Auth:
         # generate token for a user with expiration
         token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
         return token
+    
+    def get_password_hash(self, password: str) -> str:
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        return hashed.decode('utf-8')
+    
+    def check_password(self, plain_password: str, hashed_password: str) -> bool:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))      
     
     def verify_token(self, token: str) -> dict:
         return_var = {}
