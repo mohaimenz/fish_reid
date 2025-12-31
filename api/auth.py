@@ -3,9 +3,12 @@ from dotenv import load_dotenv
 from pathlib import Path
 import jwt
 import bcrypt
-from datetime import datetime, timedelta
+import datetime
 from data_access.logic import Logic
 from data_access.models import Users
+from typing import Annotated
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 class Auth:
     secret_key = None
@@ -14,11 +17,12 @@ class Auth:
     def __init__(self):
         load_dotenv(dotenv_path=Path(__file__).parent / "data_access" / ".env")
         self.secret_key = os.getenv("API_TOKEN_KEY")
+        # self.auth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
     def generate_token(self, user_id: str) -> str:
         payload = {
             "user_id": user_id,
-            "exp": datetime.utcnow() + timedelta(minutes=self.token_expiration_minutes)  # Uncomment to add expiration        
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=self.token_expiration_minutes)  # Uncomment to add expiration        
         }
         # generate token for a user with expiration
         token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
@@ -31,7 +35,7 @@ class Auth:
     def check_password(self, plain_password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))      
     
-    def verify_token(self, token: str) -> dict:
+    def verify_token(self, token: str = Depends(OAuth2PasswordBearer(tokenUrl="token"))) -> dict:
         return_var = {}
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
@@ -50,7 +54,6 @@ class Auth:
         except jwt.InvalidTokenError:
             # raise Exception("Invalid token")
             return_var = {"user_id": None, "status": "Invalid token"}
-
         return return_var
         
         

@@ -70,8 +70,8 @@ const PhotoUpload = () => {
       formData.append('dateTime', metadata.dateTime)
       
       // Submit to API
-      await workflowService.uploadImages(formData)
-      
+      const data = await workflowService.uploadImages(formData)
+      // console.log('Upload successful:', data)
       // Navigate to detection
       navigate('/detection')
     } catch (err) {

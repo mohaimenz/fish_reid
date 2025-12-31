@@ -51,9 +51,9 @@ class UserLogin(BaseModel):
     password: str
 
 class UserUploads(BaseModel):
-    id: str #(file_name would be same as id.ext)
+    id: Optional[PyObjectId] = Field(alias="_id", default = None) #(file_name would be same as id.ext)
     user_id: str
-    site_id: str
+    site_id: Optional[str] = None
     date_uploaded: datetime
 
 class Annotations(BaseModel):

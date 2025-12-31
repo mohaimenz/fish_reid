@@ -10,17 +10,18 @@ class Photo:
         self.upload_time = datetime.now()
         self.site_id = site_id
 
-    def upload_photos(self, photo_list):
+    async def upload_photos(self, photo_list):
         # Logic to upload photos
         os.makedirs(f"uploads/{self.user_id}", exist_ok=True)
         photo_ids = []
         for file in photo_list:
             try:
-                contents = file.read()
+                contents = await file.read()
+                print(f"Uploading file: {file.filename} for user: {self.user_id}")
                 user_upload = UserUploads(
                     user_id=self.user_id,
                     site_id=self.site_id,
-                    upload_time=self.upload_time
+                    date_uploaded=self.upload_time
                 )
                 upload_id = Logic().insert(user_upload)
                 img_stream = io.BytesIO(contents)
@@ -28,7 +29,7 @@ class Photo:
                 # resize image to width 1024 keeping aspect ratio    
                 w_percent = (1024 / float(image.size[0]))
                 h_size = int((float(image.size[1]) * float(w_percent)))
-                image = image.resize((1024, h_size), Image.ANTIALIAS)
+                image = image.resize((1024, h_size), Image.LANCZOS)
                 # write image to disk
                 image.save(f'uploads/{self.user_id}/{upload_id}.jpg')
                 photo_ids.append(upload_id)
