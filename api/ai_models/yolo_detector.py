@@ -53,12 +53,12 @@ def detect(image_paths, model_path, conf_threshold=0.5):
         all_predictions = []
         results = model(pil_images, verbose=False)
         for img_idx, result in enumerate(results):
-            predictions = []
+            detections = []
             for box in result.boxes.data.tolist():
                 x1, y1, x2, y2, score, cls = box
                 if score >= conf_threshold:
                     # appending x_min, y_min, height, width, class, score
-                    predictions.append({
+                    detections.append({
                         'x_min': int(x1),
                         'y_min': int(y1),
                         'height': int(y2 - y1),
@@ -68,7 +68,7 @@ def detect(image_paths, model_path, conf_threshold=0.5):
                     })
             all_predictions.append({
                 'image_path': valid_images[img_idx],
-                'predictions': predictions
+                'detections': detections
             })
         return all_predictions
     else:

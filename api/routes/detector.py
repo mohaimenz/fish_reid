@@ -44,7 +44,7 @@ async def Detect(request: DetectionRequest, auth_data: dict=Depends(Auth().verif
             )
             annotation_id = Logic().insert(annotation)
             results.append({'id':annotation_id, 'image_path': img_path, 'detections': detections})
-
-
+    print("Detection results:", results)
+    return {'status': 'success', 'results': results}
     
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
@@ -23,6 +23,9 @@ const Detection = () => {
   
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [detectionResults, setDetectionResults] = useState([]) // Raw API response
+  const [loadedImages, setLoadedImages] = useState({}) // Loaded image objects
+  const canvasRef = useRef(null)
 
   useEffect(() => {
     if (photoIds.length === 0) {
@@ -33,6 +36,13 @@ const Detection = () => {
     runDetection()
   }, [])
 
+  // Draw canvas when selected image or detections change
+  useEffect(() => {
+    if (detectionResults.length > 0 && canvasRef.current) {
+      drawImageWithBoxes()
+    }
+  }, [selectedImageIndex, detectionResults, loadedImages])
+
   const runDetection = async () => {
     setIsLoading(true)
     setError('')
@@ -40,7 +50,17 @@ const Detection = () => {
     try {
       console.log('Running detection on photo IDs:', photoIds)
       const response = await workflowService.detect({ photoIds })
-      setDetections(response.detections)
+      console.log('Detection response:', response)
+      
+      // Store raw results
+      setDetectionResults(response.results)
+      
+      // Group detections by unique image_path for the store
+      const groupedDetections = groupDetectionsByImage(response.results)
+      setDetections(groupedDetections)
+      
+      // Load all images
+      await loadImagesFromPaths(response.results)
     } catch (err) {
       setError(err.response?.data?.message || 'Detection failed. Please try again.')
     } finally {
@@ -48,8 +68,155 @@ const Detection = () => {
     }
   }
 
+  // Group detections by unique image paths
+  const groupDetectionsByImage = (results) => {
+    const imageMap = new Map()
+    
+    results.forEach(result => {
+      if (!imageMap.has(result.image_path)) {
+        imageMap.set(result.image_path, [])
+      }
+      // Add all detections for this image
+      result.detections.forEach(det => {
+        imageMap.get(result.image_path).push(det)
+      })
+    })
+    
+    // Convert to array, removing duplicates
+    return Array.from(imageMap.values()).map(dets => {
+      // Remove duplicate detections based on coordinates
+      const unique = []
+      const seen = new Set()
+      
+      dets.forEach(det => {
+        const key = `${det.x_min},${det.y_min},${det.width},${det.height}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          unique.push(det)
+        }
+      })
+      
+      return unique
+    })
+  }
+
+  // Load images from server
+  const loadImagesFromPaths = async (results) => {
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const imagePaths = [...new Set(results.map(r => r.image_path))] // Unique paths
+    const loadedImgs = {}
+    
+    for (const path of imagePaths) {
+      try {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.src = `${baseURL}/${path}`
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            loadedImgs[path] = img
+            resolve()
+          }
+          img.onerror = reject
+        })
+      } catch (err) {
+        console.error(`Failed to load image: ${path}`, err)
+      }
+    }
+    
+    setLoadedImages(loadedImgs)
+  }
+
+  // Draw image with bounding boxes on canvas
+  const drawImageWithBoxes = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    const currentResult = getCurrentImageResult()
+    if (!currentResult) return
+    
+    const img = loadedImages[currentResult.image_path]
+    if (!img) return
+    
+    const ctx = canvas.getContext('2d')
+    
+    // Set canvas size to match container
+    const container = canvas.parentElement
+    const containerWidth = container.clientWidth
+    const aspectRatio = img.height / img.width
+    const canvasHeight = containerWidth * aspectRatio
+    
+    canvas.width = containerWidth
+    canvas.height = canvasHeight
+    
+    // Calculate scale factors
+    const scaleX = canvas.width / img.width
+    const scaleY = canvas.height / img.height
+    
+    // Draw image
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    
+    // Draw bounding boxes
+    currentResult.detections.forEach((det, index) => {
+      const x = det.x_min * scaleX
+      const y = det.y_min * scaleY
+      const width = det.width * scaleX
+      const height = det.height * scaleY
+      
+      // Different colors for different classes
+      const color = det.class_name === 0 ? '#10B981' : '#F59E0B' // green for class 0, amber for class 1
+      
+      // Draw rectangle
+      ctx.strokeStyle = color
+      ctx.lineWidth = 3
+      ctx.strokeRect(x, y, width, height)
+      
+      // Draw label background
+      const label = `${det.class_name === 0 ? 'RabbitFish' : 'Other'} ${(det.confidence * 100).toFixed(1)}%`
+      ctx.font = '14px sans-serif'
+      const textMetrics = ctx.measureText(label)
+      const textHeight = 20
+      
+      ctx.fillStyle = color
+      ctx.fillRect(x, y - textHeight, textMetrics.width + 10, textHeight)
+      
+      // Draw label text
+      ctx.fillStyle = 'white'
+      ctx.fillText(label, x + 5, y - 5)
+    })
+  }
+
+  // Get current image result based on selected index
+  const getCurrentImageResult = () => {
+    if (detectionResults.length === 0) return null
+    
+    // Get unique image paths
+    const uniquePaths = [...new Set(detectionResults.map(r => r.image_path))]
+    const currentPath = uniquePaths[selectedImageIndex]
+    
+    // Find the first result with this path (they all have same detections)
+    return detectionResults.find(r => r.image_path === currentPath)
+  }
+
   const handleDeleteDetection = (detectionIndex) => {
     removeDetection(selectedImageIndex, detectionIndex)
+    
+    // Also update local detectionResults
+    const uniquePaths = [...new Set(detectionResults.map(r => r.image_path))]
+    const currentPath = uniquePaths[selectedImageIndex]
+    
+    // Update all results with this image path
+    const updatedResults = detectionResults.map(result => {
+      if (result.image_path === currentPath) {
+        return {
+          ...result,
+          detections: result.detections.filter((_, i) => i !== detectionIndex)
+        }
+      }
+      return result
+    })
+    
+    setDetectionResults(updatedResults)
   }
 
   const handleNext = () => {
@@ -59,6 +226,11 @@ const Detection = () => {
       return
     }
     navigate('/identification')
+  }
+
+  // Get unique image paths for sidebar
+  const getUniqueImagePaths = () => {
+    return [...new Set(detectionResults.map(r => r.image_path))]
   }
 
   if (isLoading) {
@@ -76,6 +248,7 @@ const Detection = () => {
   }
 
   const currentDetections = detections[selectedImageIndex] || []
+  const uniqueImagePaths = getUniqueImagePaths()
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -102,7 +275,7 @@ const Detection = () => {
                   <h2 className="text-lg font-semibold">Images</h2>
                 </Card.Header>
                 <Card.Body className="space-y-2">
-                  {images.map((_, index) => (
+                  {uniqueImagePaths.map((path, index) => (
                     <div
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
@@ -134,10 +307,17 @@ const Detection = () => {
                 </Card.Header>
                 <Card.Body>
                   {/* Main Image with Bounding Boxes */}
-                  <div className="bg-gray-900 rounded-lg aspect-video mb-6 flex items-center justify-center">
-                    <p className="text-white">
-                      Image with bounding boxes (Canvas/SVG overlay)
-                    </p>
+                  <div className="bg-gray-900 rounded-lg mb-6 relative">
+                    {getCurrentImageResult() && loadedImages[getCurrentImageResult().image_path] ? (
+                      <canvas 
+                        ref={canvasRef}
+                        className="w-full rounded-lg"
+                      />
+                    ) : (
+                      <div className="aspect-video flex items-center justify-center">
+                        <p className="text-white">Loading image...</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Detection List */}
@@ -154,10 +334,13 @@ const Detection = () => {
                         >
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">
-                              RabbitFish #{index + 1}
+                              {detection.class_name === 0 ? 'RabbitFish' : 'Other Species'} #{index + 1}
                             </p>
                             <p className="text-sm text-gray-600">
                               Confidence: {(detection.confidence * 100).toFixed(1)}%
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Position: ({detection.x_min}, {detection.y_min}) | Size: {detection.width}x{detection.height}
                             </p>
                           </div>
                           <Button

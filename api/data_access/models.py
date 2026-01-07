@@ -57,7 +57,7 @@ class UserUploads(BaseModel):
     date_uploaded: datetime
 
 class Annotations(BaseModel):
-    id: str
+    id: Optional[PyObjectId] = Field(alias="_id", default = None)
     user_upload_id: str
     x_min: float
     y_min: float
