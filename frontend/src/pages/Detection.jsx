@@ -13,6 +13,7 @@ const Detection = () => {
   const navigate = useNavigate()
   const { 
     images, 
+    photoIds,
     detections, 
     selectedImageIndex,
     setDetections, 
@@ -24,7 +25,7 @@ const Detection = () => {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (images.length === 0) {
+    if (photoIds.length === 0) {
       navigate('/upload')
       return
     }
@@ -37,7 +38,8 @@ const Detection = () => {
     setError('')
     
     try {
-      const response = await workflowService.detect({ images })
+      console.log('Running detection on photo IDs:', photoIds)
+      const response = await workflowService.detect({ photoIds })
       setDetections(response.detections)
     } catch (err) {
       setError(err.response?.data?.message || 'Detection failed. Please try again.')

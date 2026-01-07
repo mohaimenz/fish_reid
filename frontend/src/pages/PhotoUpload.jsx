@@ -71,7 +71,11 @@ const PhotoUpload = () => {
       
       // Submit to API
       const data = await workflowService.uploadImages(formData)
-      // console.log('Upload successful:', data)
+      console.log('Upload successful:', data)
+      if(data.uploaded_photo_ids) {
+        // Store uploaded photo IDs if needed
+        useWorkflowStore.getState().setPhotoIds(data.uploaded_photo_ids)
+      }
       // Navigate to detection
       navigate('/detection')
     } catch (err) {

@@ -3,6 +3,7 @@ import { create } from 'zustand'
 const useWorkflowStore = create((set) => ({
   // Photo Upload State
   images: [],
+  photoIds: [],
   metadata: {
     latitude: '',
     longitude: '',
@@ -21,6 +22,7 @@ const useWorkflowStore = create((set) => ({
   trackingHistory: null,
 
   // Actions
+  setPhotoIds: (ids) => set({ photoIds: ids }),
   setImages: (images) => set({ images }),
   
   addImage: (image) => set((state) => ({ 
@@ -55,6 +57,7 @@ const useWorkflowStore = create((set) => ({
 
   resetWorkflow: () => set({
     images: [],
+    photoIds: [],
     metadata: {
       latitude: '',
       longitude: '',

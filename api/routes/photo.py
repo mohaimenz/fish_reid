@@ -20,8 +20,7 @@ async def Upload(images: List[UploadFile] = File(...), auth_data: dict = Depends
     
     photo_handler = Photo(user_id=auth_data.get("user_id"))
     photo_ids = await photo_handler.upload_photos(images)
-    # print(f"Uploaded photo IDs: {photo_ids}")
-    return {'status': 'success', 'uploaded_files': photo_ids}
+    return {'status': 'success', 'uploaded_photo_ids': photo_ids}
     
 
 @photo_routes.get("/get/{photo_id}")

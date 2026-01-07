@@ -4,13 +4,14 @@ from ultralytics import YOLO
 from PIL import Image
 import yaml
 
-def get_predictions(photo_ids):
+def get_predictions(image_paths):
     try:
         #load config from yaml
         config_path = Path(__file__).parent / "config.yaml"
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)   
         model_path = config.get('model_path', 'yolo-v11-n-4.pt')
+        model_path = os.path.abspath(os.path.join('ai_models', model_path))
         conf_threshold = config.get('conf_threshold', 0.5)  
         return detect(image_paths, model_path, conf_threshold)
     except Exception as e:
