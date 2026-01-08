@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
+import { X } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -25,7 +25,9 @@ const Detection = () => {
   const [error, setError] = useState('')
   const [detectionResults, setDetectionResults] = useState([]) // Raw API response
   const [loadedImages, setLoadedImages] = useState({}) // Loaded image objects
+  const [boundingBoxPositions, setBoundingBoxPositions] = useState([]) // Scaled box positions for overlays
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
 
   useEffect(() => {
     if (photoIds.length === 0) {
@@ -156,15 +158,21 @@ const Detection = () => {
     // Draw image
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
     
-    // Draw bounding boxes
-    currentResult.detections.forEach((det, index) => {
+    // Store scaled bounding box positions for overlay buttons
+    const boxPositions = []
+    
+    // Draw bounding boxes (only for class_name === 0)
+    currentResult.detections.filter(det => det.class_name === 0).forEach((det, index) => {
       const x = det.x_min * scaleX
       const y = det.y_min * scaleY
       const width = det.width * scaleX
       const height = det.height * scaleY
       
-      // Different colors for different classes
-      const color = det.class_name === 0 ? '#10B981' : '#F59E0B' // green for class 0, amber for class 1
+      // Store position for overlay button
+      boxPositions.push({ x, y, width, height, originalIndex: currentResult.detections.indexOf(det) })
+      
+      // Green color for RabbitFish
+      const color = '#10B981'
       
       // Draw rectangle
       ctx.strokeStyle = color
@@ -172,7 +180,7 @@ const Detection = () => {
       ctx.strokeRect(x, y, width, height)
       
       // Draw label background
-      const label = `${det.class_name === 0 ? 'RabbitFish' : 'Other'} ${(det.confidence * 100).toFixed(1)}%`
+      const label = `RabbitFish ${(det.confidence * 100).toFixed(1)}%`
       ctx.font = '14px sans-serif'
       const textMetrics = ctx.measureText(label)
       const textHeight = 20
@@ -184,6 +192,8 @@ const Detection = () => {
       ctx.fillStyle = 'white'
       ctx.fillText(label, x + 5, y - 5)
     })
+    
+    setBoundingBoxPositions(boxPositions)
   }
 
   // Get current image result based on selected index
@@ -289,7 +299,7 @@ const Detection = () => {
                     >
                       <p className="text-sm font-medium">Image {index + 1}</p>
                       <p className="text-xs text-gray-600">
-                        {detections[index]?.length || 0} detection(s)
+                        {detections[index]?.filter(d => d.class_name === 0).length || 0} detection(s)
                       </p>
                     </div>
                   ))}
@@ -307,12 +317,29 @@ const Detection = () => {
                 </Card.Header>
                 <Card.Body>
                   {/* Main Image with Bounding Boxes */}
-                  <div className="bg-gray-900 rounded-lg mb-6 relative">
+                  <div ref={containerRef} className="bg-gray-900 rounded-lg mb-6 relative">
                     {getCurrentImageResult() && loadedImages[getCurrentImageResult().image_path] ? (
-                      <canvas 
-                        ref={canvasRef}
-                        className="w-full rounded-lg"
-                      />
+                      <>
+                        <canvas 
+                          ref={canvasRef}
+                          className="w-full rounded-lg"
+                        />
+                        {/* Overlay delete buttons on bounding boxes */}
+                        {boundingBoxPositions.map((box, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleDeleteDetection(box.originalIndex)}
+                            className="absolute bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg transition-colors"
+                            style={{
+                              left: `${box.x + box.width - 12}px`,
+                              top: `${box.y - 12}px`,
+                            }}
+                            title="Delete detection"
+                          >
+                            <X size={12} />
+                          </button>
+                        ))}
+                      </>
                     ) : (
                       <div className="aspect-video flex items-center justify-center">
                         <p className="text-white">Loading image...</p>
@@ -320,40 +347,11 @@ const Detection = () => {
                     )}
                   </div>
 
-                  {/* Detection List */}
-                  <div className="space-y-3">
-                    {currentDetections.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">
-                        No detections found in this image
-                      </p>
-                    ) : (
-                      currentDetections.map((detection, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">
-                              {detection.class_name === 0 ? 'RabbitFish' : 'Other Species'} #{index + 1}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Confidence: {(detection.confidence * 100).toFixed(1)}%
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Position: ({detection.x_min}, {detection.y_min}) | Size: {detection.width}x{detection.height}
-                            </p>
-                          </div>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            icon={<Trash2 size={16} />}
-                            onClick={() => handleDeleteDetection(index)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      ))
-                    )}
+                  {/* Detection Summary */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold">{currentDetections.filter(d => d.class_name === 0).length}</span> RabbitFish detected in this image
+                    </p>
                   </div>
                 </Card.Body>
               </Card>
