@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from data_access.models import Annotations, Users
 from data_access.logic import Logic 
@@ -22,7 +22,7 @@ async def Detect(request: DetectionRequest, auth_data: dict=Depends(Auth().verif
     results = []
     photo_handler = Photo(user_id=auth_data.get("user_id"))
     photo_paths = [photo_handler.get_photo_path(photo_id) for photo_id in request.photo_ids]
-    print("Photo paths for detection:", photo_paths)
+    # print("Photo paths for detection:", photo_paths)
     # Get predictions from YOLO detector
     preditions = yolo_detector.get_predictions(photo_paths)
     # Save preditions to database
@@ -32,6 +32,7 @@ async def Detect(request: DetectionRequest, auth_data: dict=Depends(Auth().verif
         # Find corresponding user_upload_id
         file_name = os.path.basename(img_path)
         upload_id = os.path.splitext(file_name)[0]
+        annotation_id = ""
         for det in detections:
             annotation = Annotations(
                 user_upload_id=upload_id,
@@ -43,8 +44,9 @@ async def Detect(request: DetectionRequest, auth_data: dict=Depends(Auth().verif
                 confidence=det['confidence']
             )
             annotation_id = Logic().insert(annotation)
-            results.append({'id':annotation_id, 'image_path': img_path, 'detections': detections})
-    print("Detection results:", results)
+        # We want to return all the images even if no detections were made
+        results.append({'id':annotation_id, 'image_path': img_path, 'detections': detections})
+    # print("Detection results:", results)
     return {'status': 'success', 'results': results}
     
 

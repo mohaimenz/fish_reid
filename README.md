@@ -10,5 +10,10 @@
 5. Rewrite git history: git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch venv/*' --prune-empty --tag-name-filter cat -- --all
 6. Now push using --force: git push origin <your-branch-name> --force
 7. clean locally: rm -Rf .git/refs/original/ # removes backup refs from filter-branch
-git gc --prune=now
+8. git gc --prune=now
+
+# Ignoring files or folders previously pushed to git
+1. Add the folder to .gitignore
+2. git rm -r --cached folder_to_ignore
+3. commit and push
 
