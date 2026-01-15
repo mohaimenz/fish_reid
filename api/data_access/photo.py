@@ -4,6 +4,8 @@ from data_access.logic import Logic
 from data_access.models import UserUploads
 from PIL import Image
 import io
+from bson import ObjectId
+
 class Photo:
     def __init__(self, user_id, site_id=None):
         self.user_id = user_id
@@ -49,6 +51,9 @@ class Photo:
             return None
    
     def delete_photo(self, photo_id):
+        # Delete photo from database
+        Logic().delete("user_uploads", {"_id": ObjectId(photo_id), "user_id": self.user_id})
+        # Delete photo from disk
         photo_path = self.get_photo_path(photo_id)
         if os.path.exists(photo_path):
             os.remove(photo_path)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { X } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
 import Button from '../components/ui/Button'
@@ -11,6 +11,8 @@ import workflowService from '../services/workflowService'
 
 const Detection = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const isResuming = location.state?.isResuming || false
   const { 
     images, 
     photoIds,
@@ -18,7 +20,8 @@ const Detection = () => {
     selectedImageIndex,
     setDetections, 
     setSelectedImageIndex,
-    removeDetection 
+    removeDetection,
+    setPhotoIds 
   } = useWorkflowStore()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -30,12 +33,35 @@ const Detection = () => {
   const containerRef = useRef(null)
 
   useEffect(() => {
-    if (photoIds.length === 0) {
-      navigate('/upload')
-      return
+    const initializeDetection = async () => {
+      if (isResuming) {
+        // Fetch incomplete session data from backend (includes detection results)
+        try {
+          setIsLoading(true)
+          const sessionData = await workflowService.getIncompleteSession()
+          if (sessionData && sessionData.results && sessionData.results.length > 0) {
+            await processDetectionResults(sessionData.results)
+          } else {
+            setError('No incomplete session found')
+            navigate('/upload')
+          }
+        } catch (err) {
+          setError('Failed to load incomplete session')
+          navigate('/upload')
+        } finally {
+          setIsLoading(false)
+        }
+      } else {
+        // Normal flow: check if photoIds exist from upload
+        if (photoIds.length === 0) {
+          navigate('/upload')
+          return
+        }
+        runDetection()
+      }
     }
     
-    runDetection()
+    initializeDetection()
   }, [])
 
   // Draw canvas when selected image or detections change
@@ -44,6 +70,19 @@ const Detection = () => {
       drawImageWithBoxes()
     }
   }, [selectedImageIndex, detectionResults, loadedImages])
+
+  // Process detection results (used by both normal and resume flows)
+  const processDetectionResults = async (results) => {
+    // Store raw results
+    setDetectionResults(results)
+    
+    // Group detections by unique image_path for the store
+    const groupedDetections = groupDetectionsByImage(results)
+    setDetections(groupedDetections)
+    
+    // Load all images
+    await loadImagesFromPaths(results)
+  }
 
   const runDetection = async () => {
     setIsLoading(true)
@@ -54,15 +93,7 @@ const Detection = () => {
       const response = await workflowService.detect({ photoIds })
       console.log('Detection response:', response)
       
-      // Store raw results
-      setDetectionResults(response.results)
-      
-      // Group detections by unique image_path for the store
-      const groupedDetections = groupDetectionsByImage(response.results)
-      setDetections(groupedDetections)
-      
-      // Load all images
-      await loadImagesFromPaths(response.results)
+      await processDetectionResults(response.results)
     } catch (err) {
       setError(err.response?.data?.message || 'Detection failed. Please try again.')
     } finally {

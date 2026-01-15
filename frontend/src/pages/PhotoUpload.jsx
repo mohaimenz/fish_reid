@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Calendar, Upload as UploadIcon, X } from 'lucide-react'
+import { MapPin, Calendar, Upload as UploadIcon, X, PlayCircle } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -8,10 +8,12 @@ import Card from '../components/ui/Card'
 import Alert from '../components/ui/Alert'
 import useWorkflowStore from '../store/workflowStore'
 import workflowService from '../services/workflowService'
+import useAuthStore from '../store/authStore'
 
 const PhotoUpload = () => {
   const navigate = useNavigate()
   const { images, metadata, setImages, setMetadata, updateMetadata } = useWorkflowStore()
+  const { resumeOption, setAuth, user, token } = useAuthStore()
   
   const [previews, setPreviews] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -85,6 +87,30 @@ const PhotoUpload = () => {
     }
   }
 
+  const handleResume = () => {
+    navigate('/detection', { state: { isResuming: true } })
+  }
+
+  const handleDiscard = async () => {
+    if (!window.confirm('Are you sure you want to delete all previous unfinished work?')) {
+      return
+    }
+    
+    setIsSubmitting(true)
+    setError('')
+    
+    try {
+      const response = await workflowService.discardUnidentifiedAnnotations()
+      console.log('Discard successful:', response)
+      // Clear resumeOption from auth store to hide the banner
+      setAuth(user, token, false)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to discard sessions. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <WorkflowStepper currentStep={1} />
@@ -95,6 +121,42 @@ const PhotoUpload = () => {
           <p className="text-gray-600 mb-8">
             Upload underwater images and provide location metadata
           </p>
+
+          {resumeOption && (
+            <Card className="mb-6 bg-blue-50 border-blue-200">
+              <Card.Body>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <PlayCircle className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-blue-900">Resume Previous Session</h3>
+                      <p className="text-sm text-blue-700">
+                        You have unfinished work. Continue where you left off or discard it.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleDiscard}
+                      disabled={isSubmitting}
+                      className="border-red-500 text-red-600 hover:bg-red-50"
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleResume}
+                      disabled={isSubmitting}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Resume
+                    </Button>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
 
           {error && (
             <Alert type="error" className="mb-6">

@@ -1,12 +1,13 @@
 from fastapi import APIRouter
-from data_access.models import UserLogin, Users
-from data_access.logic import Logic 
 import bcrypt
 import jwt
 from dotenv import load_dotenv
 import os
 from datetime import datetime
 from auth import Auth
+from data_access.annotation import Annotation
+from data_access.models import UserLogin, Users
+from data_access.logic import Logic 
 
 user_routes = APIRouter()
 
@@ -27,7 +28,14 @@ async def Login(data: UserLogin):
             Logic().update("Users", {"_id": user[0]['id']}, {"last_login": datetime.utcnow()})  
             token = Auth().generate_token(user[0]['id'])
             # print(f"Generated token: {token}")
-            return {'status': 'success', 'message': 'Login successful', 'user': f"{user[0]}", 'token': f"{token}"}
+            # Coming to this point means authentication is successful
+            # Now check if the user has any incomplete actions in detection step.
+            has_pre_sessions = False
+            annotation_handler = Annotation(user_id=user[0]['id'])
+            previous_results = annotation_handler.load_previously_saved_annotations()
+            if previous_results and len(previous_results) > 0:
+                has_pre_sessions = True
+            return {'status': 'success', 'message': 'Login successful', 'user': f"{user[0]}", 'token': f"{token}", 'resume_option': has_pre_sessions}
         
     else:
         return {'status': 'failure', 'message': 'Invalid credentials'}

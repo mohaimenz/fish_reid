@@ -60,7 +60,7 @@ const Login = () => {
     try {
       const response = await authService.login(formData)
       // console.log('Login successful:', response)
-      setAuth(response.user, response.token)
+      setAuth(response.user, response.token, response.resume_option)
       navigate('/upload')
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed. Please try again.'

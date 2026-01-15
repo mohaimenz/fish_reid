@@ -32,6 +32,20 @@ const workflowService = {
     const response = await apiClient.get(`${endpoint}/${fishId}`)
     return response.data
   },
+
+  // Get incomplete session (photos detected but not identified)
+  getIncompleteSession: async () => {
+    const endpoint = import.meta.env.VITE_RESUME_DETECTION_ENDPOINT || '/resume-detection'
+    const response = await apiClient.get(endpoint)
+    return response.data
+  },
+
+  // Discard all unidentified annotations
+  discardUnidentifiedAnnotations: async () => {
+    const endpoint = import.meta.env.VITE_DISCARD_PREV_UNFINISHED_ENDPOINT || '/discard-prev-unfinished'
+    const response = await apiClient.delete(endpoint)
+    return response.data
+  },
 }
 
 export default workflowService

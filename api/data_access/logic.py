@@ -58,6 +58,19 @@ class Logic:
             print(f"Error updating data in {collection_name} with query {query}: {e}")
             self.db.close()
             return None
+    
+    def delete(self, modelName, query):
+        collection_name = self.get_collection_name(modelName)
+        try:
+            self.db.connect()
+            collection = self.db.get_collection(collection_name)
+            result = collection.delete_many(query)
+            self.db.close()
+            return result.deleted_count
+        except Exception as e:
+            print(f"Error deleting data from {collection_name} with query {query}: {e}")
+            self.db.close()
+            return None
         
     def map_db_id_to_model_id(self, documents):
         for doc in documents:

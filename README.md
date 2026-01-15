@@ -15,5 +15,6 @@
 # Ignoring files or folders previously pushed to git
 1. Add the folder to .gitignore
 2. git rm -r --cached folder_to_ignore
-3. commit and push
+3. git add .
+4. commit and push
 
