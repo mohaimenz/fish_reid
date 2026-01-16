@@ -12,7 +12,7 @@ import useAuthStore from '../store/authStore'
 
 const PhotoUpload = () => {
   const navigate = useNavigate()
-  const { images, metadata, setImages, setMetadata, updateMetadata } = useWorkflowStore()
+  const { images, metadata, setImages, setMetadata, updateMetadata, resetWorkflow } = useWorkflowStore()
   const { resumeOption, setAuth, user, token } = useAuthStore()
   
   const [previews, setPreviews] = useState([])
@@ -104,6 +104,13 @@ const PhotoUpload = () => {
       console.log('Discard successful:', response)
       // Clear resumeOption from auth store to hide the banner
       setAuth(user, token, false)
+      
+      // Clear workflow store completely
+      resetWorkflow()
+      
+      // Clear local previews and revoke URLs to prevent memory leaks
+      previews.forEach(preview => URL.revokeObjectURL(preview.url))
+      setPreviews([])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to discard sessions. Please try again.')
     } finally {
