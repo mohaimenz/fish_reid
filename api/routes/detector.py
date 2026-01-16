@@ -9,6 +9,7 @@ import os
 from auth import Auth
 from data_access.photo import Photo
 from data_access.annotation import Annotation
+from bson import ObjectId
 
 detector_routes = APIRouter()
 
@@ -118,6 +119,39 @@ class ManualAnnotationRequest(BaseModel):
     class_name: int = 0
     confidence: float = 1.0
 
+class DeleteImageRequest(BaseModel):
+    user_upload_id: str = Field(..., alias="uploadId")
+
+@detector_routes.delete("/delete-image")
+async def DeleteImage(request: DeleteImageRequest, auth_data: dict=Depends(Auth().verify_token)):
+    if auth_data.get("user_id") is None:
+        return {'status': 'failure', 'message': auth_data.get("status")}
+    
+    user_id = auth_data.get("user_id")
+    upload_id = request.user_upload_id
+    
+    # Verify upload belongs to user using existing Logic().get_by_query()
+    upload = Logic().get_by_query("user_uploads", {
+        "_id": ObjectId(upload_id),
+        "user_id": user_id
+    })
+    
+    if not upload or len(upload) == 0:
+        return {'status': 'failure', 'message': 'Unauthorized or upload not found'}
+    
+    # Delete all annotations for this upload using existing Logic().delete()
+    deleted_annotations = Logic().delete("annotations", {"user_upload_id": upload_id})
+    
+    # Delete upload record and physical file using existing Photo.delete_photo()
+    photo_handler = Photo(user_id=user_id)
+    file_deleted = photo_handler.delete_photo(upload_id)
+    
+    return {
+        'status': 'success',
+        'deleted_annotations': deleted_annotations,
+        'file_deleted': file_deleted
+    }
+
 @detector_routes.post("/save-manual-annotation")
 async def SaveManualAnnotation(request: ManualAnnotationRequest, auth_data: dict=Depends(Auth().verify_token)):
     if auth_data.get("user_id") is None:
@@ -126,7 +160,6 @@ async def SaveManualAnnotation(request: ManualAnnotationRequest, auth_data: dict
     user_id = auth_data.get("user_id")
     
     # Verify upload belongs to user
-    from bson import ObjectId
     upload = Logic().get_by_query("user_uploads", {
         "_id": ObjectId(request.user_upload_id),
         "user_id": user_id

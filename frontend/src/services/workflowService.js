@@ -69,6 +69,15 @@ const workflowService = {
     const response = await apiClient.post(endpoint, data)
     return response.data
   },
+
+  // Delete entire image with all annotations
+  deleteImage: async (uploadId) => {
+    const endpoint = import.meta.env.VITE_DELETE_IMAGE_ENDPOINT || '/delete-image'
+    const response = await apiClient.delete(endpoint, {
+      data: { uploadId }
+    })
+    return response.data
+  },
 }
 
 export default workflowService

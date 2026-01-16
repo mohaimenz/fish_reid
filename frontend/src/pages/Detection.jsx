@@ -427,6 +427,46 @@ const Detection = () => {
     }
   }
 
+  const handleDeleteImage = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete everything of this image from the system?"
+    )
+    
+    if (!confirmed) return
+    
+    const currentResult = getCurrentImageResult()
+    const uploadId = currentResult.user_upload_id || currentResult.id
+    
+    try {
+      await workflowService.deleteImage(uploadId)
+      
+      // Remove image from local state
+      const updatedResults = detectionResults.filter(
+        r => (r.user_upload_id || r.id) !== uploadId
+      )
+      
+      // If no images left, use existing resetWorkflow() and navigate
+      if (updatedResults.length === 0) {
+        resetWorkflow()
+        navigate('/upload')
+      } else {
+        setDetectionResults(updatedResults)
+        
+        // Update workflow store using existing setDetections()
+        const groupedDetections = groupDetectionsByImage(updatedResults)
+        setDetections(groupedDetections)
+        
+        // Adjust selectedImageIndex if needed
+        const uniquePaths = [...new Set(updatedResults.map(r => r.image_path))]
+        if (selectedImageIndex >= uniquePaths.length) {
+          setSelectedImageIndex(0)
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete image')
+    }
+  }
+
   // Get unique image paths for sidebar
   const getUniqueImagePaths = () => {
     return [...new Set(detectionResults.map(r => r.image_path))]
@@ -526,6 +566,15 @@ const Detection = () => {
 
                   {/* Main Image with Bounding Boxes */}
                   <div ref={containerRef} className="bg-gray-900 rounded-lg mb-6 relative">
+                    {/* Delete Image Button */}
+                    <button
+                      onClick={handleDeleteImage}
+                      className="absolute -top-3 -right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-colors"
+                      title="Delete this image and all its annotations"
+                    >
+                      <X size={20} />
+                    </button>
+                    
                     {getCurrentImageResult() && loadedImages[getCurrentImageResult().image_path] ? (
                       <>
                         <canvas 
