@@ -30,6 +30,9 @@ const Detection = () => {
   const [detectionResults, setDetectionResults] = useState([]) // Raw API response
   const [loadedImages, setLoadedImages] = useState({}) // Loaded image objects
   const [boundingBoxPositions, setBoundingBoxPositions] = useState([]) // Scaled box positions for overlays
+  const [isDrawingMode, setIsDrawingMode] = useState(false)
+  const [drawingBox, setDrawingBox] = useState(null) // {startX, startY, endX, endY}
+  const [tempAnnotation, setTempAnnotation] = useState(null) // Drawn box waiting to be saved
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const hasRun = useRef(false)
@@ -78,7 +81,7 @@ const Detection = () => {
     if (detectionResults.length > 0 && canvasRef.current) {
       drawImageWithBoxes()
     }
-  }, [selectedImageIndex, detectionResults, loadedImages])
+  }, [selectedImageIndex, detectionResults, loadedImages, drawingBox, tempAnnotation])
 
   // Process detection results (used by both normal and resume flows)
   const processDetectionResults = async (results) => {
@@ -236,6 +239,42 @@ const Detection = () => {
       ctx.fillText(label, x + 5, y - 5)
     })
     
+    // Draw active drawing box
+    if (drawingBox) {
+      const x = Math.min(drawingBox.startX, drawingBox.endX)
+      const y = Math.min(drawingBox.startY, drawingBox.endY)
+      const w = Math.abs(drawingBox.endX - drawingBox.startX)
+      const h = Math.abs(drawingBox.endY - drawingBox.startY)
+      
+      ctx.strokeStyle = '#EAB308'
+      ctx.lineWidth = 3
+      ctx.setLineDash([5, 5])
+      ctx.strokeRect(x, y, w, h)
+      ctx.setLineDash([])
+    }
+    
+    // Draw temporary annotation (after mouse up, before save)
+    if (tempAnnotation) {
+      const x = tempAnnotation.x_min * scaleX
+      const y = tempAnnotation.y_min * scaleY
+      const w = tempAnnotation.width * scaleX
+      const h = tempAnnotation.height * scaleY
+      
+      ctx.strokeStyle = '#EAB308'
+      ctx.lineWidth = 3
+      ctx.strokeRect(x, y, w, h)
+      
+      const label = 'RabbitFish 100.0%'
+      ctx.font = '14px sans-serif'
+      const textMetrics = ctx.measureText(label)
+      const textHeight = 20
+      
+      ctx.fillStyle = '#EAB308'
+      ctx.fillRect(x, y - textHeight, textMetrics.width + 10, textHeight)
+      ctx.fillStyle = 'white'
+      ctx.fillText(label, x + 5, y - 5)
+    }
+    
     setBoundingBoxPositions(boxPositions)
   }
 
@@ -303,6 +342,89 @@ const Detection = () => {
   const handleBackToUpload = () => {
     resetWorkflow()
     navigate('/upload')
+  }
+
+  const handleMouseDown = (e) => {
+    if (!isDrawingMode || tempAnnotation) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setDrawingBox({ startX: x, startY: y, endX: x, endY: y })
+  }
+
+  const handleMouseMove = (e) => {
+    if (!drawingBox) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setDrawingBox({ ...drawingBox, endX: x, endY: y })
+  }
+
+  const handleMouseUp = () => {
+    if (!drawingBox) return
+    
+    const currentResult = getCurrentImageResult()
+    const img = loadedImages[currentResult.image_path]
+    const canvas = canvasRef.current
+    const scaleX = img.width / canvas.width
+    const scaleY = img.height / canvas.height
+    
+    // Convert canvas coords to image coords
+    const x_min = Math.min(drawingBox.startX, drawingBox.endX) * scaleX
+    const y_min = Math.min(drawingBox.startY, drawingBox.endY) * scaleY
+    const width = Math.abs(drawingBox.endX - drawingBox.startX) * scaleX
+    const height = Math.abs(drawingBox.endY - drawingBox.startY) * scaleY
+    
+    // Create temp annotation
+    setTempAnnotation({
+      x_min: Math.round(x_min),
+      y_min: Math.round(y_min),
+      width: Math.round(width),
+      height: Math.round(height),
+      class_name: 0,
+      confidence: 1.0
+    })
+    
+    setDrawingBox(null)
+    setIsDrawingMode(false)
+  }
+
+  const handleSaveAnnotation = async () => {
+    if (!tempAnnotation) return
+    
+    try {
+      const currentResult = getCurrentImageResult()
+      const upload_id = currentResult.user_upload_id || currentResult.id
+      
+      const response = await workflowService.saveManualAnnotation({
+        user_upload_id: upload_id,
+        ...tempAnnotation
+      })
+      
+      // Add annotation_id and add to detections
+      const newAnnotation = { ...tempAnnotation, annotation_id: response.annotation_id }
+      
+      // Update detectionResults and local store
+      const updatedResults = detectionResults.map(result => {
+        if (result.image_path === currentResult.image_path) {
+          return {
+            ...result,
+            detections: [...result.detections, newAnnotation]
+          }
+        }
+        return result
+      })
+      
+      setDetectionResults(updatedResults)
+      
+      // Also update the store
+      const groupedDetections = groupDetectionsByImage(updatedResults)
+      setDetections(groupedDetections)
+      
+      setTempAnnotation(null)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save annotation')
+    }
   }
 
   // Get unique image paths for sidebar
@@ -383,14 +505,35 @@ const Detection = () => {
                   </h2>
                 </Card.Header>
                 <Card.Body>
+                  {/* Draw Mode Toggle */}
+                  <div className="mb-4">
+                    <Button
+                      variant={isDrawingMode ? "primary" : "outline"}
+                      onClick={() => {
+                        setIsDrawingMode(!isDrawingMode)
+                        if (tempAnnotation) setTempAnnotation(null)
+                      }}
+                      disabled={tempAnnotation !== null}
+                    >
+                      {isDrawingMode ? '🎨 Drawing Mode ON' : '➕ Draw Annotation'}
+                    </Button>
+                    {isDrawingMode && (
+                      <span className="ml-3 text-sm text-gray-600">
+                        Click and drag on the image to draw a bounding box
+                      </span>
+                    )}
+                  </div>
+
                   {/* Main Image with Bounding Boxes */}
                   <div ref={containerRef} className="bg-gray-900 rounded-lg mb-6 relative">
                     {getCurrentImageResult() && loadedImages[getCurrentImageResult().image_path] ? (
                       <>
                         <canvas 
                           ref={canvasRef}
-                          className="w-full rounded-lg"
-                        />
+                          className="w-full rounded-lg"                          onMouseDown={handleMouseDown}
+                          onMouseMove={handleMouseMove}
+                          onMouseUp={handleMouseUp}
+                          style={{ cursor: isDrawingMode ? 'crosshair' : 'default' }}                        />
                         {/* Overlay delete buttons on bounding boxes */}
                         {boundingBoxPositions.map((box, index) => (
                           <button
@@ -406,6 +549,26 @@ const Detection = () => {
                             <X size={12} />
                           </button>
                         ))}
+                        
+                        {/* Save/Delete overlay for temp annotation */}
+                        {tempAnnotation && (
+                          <div className="absolute top-4 right-4 flex gap-2">
+                            <Button
+                              variant="primary"
+                              onClick={handleSaveAnnotation}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              ✓ Save Annotation
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setTempAnnotation(null)}
+                              className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                            >
+                              ✕ Cancel
+                            </Button>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="aspect-video flex items-center justify-center">

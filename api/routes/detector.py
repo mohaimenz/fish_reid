@@ -109,6 +109,47 @@ async def DiscardPrevUnfinished(auth_data: dict=Depends(Auth().verify_token)):
 class DeleteBboxRequest(BaseModel):
     annotation_id: str = Field(..., alias="annotationId")
 
+class ManualAnnotationRequest(BaseModel):
+    user_upload_id: str
+    x_min: int
+    y_min: int
+    width: int
+    height: int
+    class_name: int = 0
+    confidence: float = 1.0
+
+@detector_routes.post("/save-manual-annotation")
+async def SaveManualAnnotation(request: ManualAnnotationRequest, auth_data: dict=Depends(Auth().verify_token)):
+    if auth_data.get("user_id") is None:
+        return {'status': 'failure', 'message': auth_data.get("status")}
+    
+    user_id = auth_data.get("user_id")
+    
+    # Verify upload belongs to user
+    from bson import ObjectId
+    upload = Logic().get_by_query("user_uploads", {
+        "_id": ObjectId(request.user_upload_id),
+        "user_id": user_id
+    })
+    
+    if not upload:
+        return {'status': 'failure', 'message': 'Unauthorized or upload not found'}
+    
+    # Create annotation
+    annotation = Annotations(
+        user_upload_id=request.user_upload_id,
+        x_min=request.x_min,
+        y_min=request.y_min,
+        height=request.height,
+        width=request.width,
+        class_name=request.class_name,
+        confidence=request.confidence
+    )
+    
+    annotation_id = Logic().insert(annotation)
+    
+    return {'status': 'success', 'annotation_id': annotation_id}
+
 @detector_routes.delete("/delete-bbox")
 async def DeleteBbox(request: DeleteBboxRequest, auth_data: dict=Depends(Auth().verify_token)):
     if auth_data.get("user_id") is None:

@@ -62,6 +62,13 @@ const workflowService = {
     })
     return response.data
   },
+
+  // Save manually drawn annotation
+  saveManualAnnotation: async (data) => {
+    const endpoint = import.meta.env.VITE_SAVE_MANUAL_ANNOTATION_ENDPOINT || '/save-manual-annotation'
+    const response = await apiClient.post(endpoint, data)
+    return response.data
+  },
 }
 
 export default workflowService
