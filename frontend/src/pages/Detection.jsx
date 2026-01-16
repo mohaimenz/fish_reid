@@ -21,7 +21,8 @@ const Detection = () => {
     setDetections, 
     setSelectedImageIndex,
     removeDetection,
-    setPhotoIds 
+    setPhotoIds,
+    resetWorkflow
   } = useWorkflowStore()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -31,11 +32,23 @@ const Detection = () => {
   const [boundingBoxPositions, setBoundingBoxPositions] = useState([]) // Scaled box positions for overlays
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
+  const hasRun = useRef(false)
 
   useEffect(() => {
+    // Run only once on mount. 
+    // In React 18 with StrictMode (which is enabled by default in Vite/Create React App), useEffect with empty dependency array [] runs twice in development to help catch bugs.
+    if (hasRun.current) return
+    hasRun.current = true
+    
     const initializeDetection = async () => {
+      // Guard: Unusual access - no new uploads and not resuming
+      if (!isResuming && photoIds.length === 0) {
+        navigate('/upload')
+        return
+      }
+
       if (isResuming) {
-        // Fetch incomplete session data from backend (includes detection results)
+        // Load from DB
         try {
           setIsLoading(true)
           const sessionData = await workflowService.getIncompleteSession()
@@ -52,11 +65,7 @@ const Detection = () => {
           setIsLoading(false)
         }
       } else {
-        // Normal flow: check if photoIds exist from upload
-        if (photoIds.length === 0) {
-          navigate('/upload')
-          return
-        }
+        // photoIds exist - run detection on new uploads
         runDetection()
       }
     }
@@ -94,6 +103,9 @@ const Detection = () => {
       console.log('Detection response:', response)
       
       await processDetectionResults(response.results)
+      
+      // Clear photoIds after successful detection
+      setPhotoIds([])
     } catch (err) {
       setError(err.response?.data?.message || 'Detection failed. Please try again.')
     } finally {
@@ -239,25 +251,44 @@ const Detection = () => {
     return detectionResults.find(r => r.image_path === currentPath)
   }
 
-  const handleDeleteDetection = (detectionIndex) => {
-    removeDetection(selectedImageIndex, detectionIndex)
+  const handleDeleteDetection = async (detectionIndex) => {
+    const currentResult = getCurrentImageResult()
+    if (!currentResult || !currentResult.detections[detectionIndex]) return
     
-    // Also update local detectionResults
-    const uniquePaths = [...new Set(detectionResults.map(r => r.image_path))]
-    const currentPath = uniquePaths[selectedImageIndex]
+    const detection = currentResult.detections[detectionIndex]
+    const annotationId = detection.annotation_id
     
-    // Update all results with this image path
-    const updatedResults = detectionResults.map(result => {
-      if (result.image_path === currentPath) {
-        return {
-          ...result,
-          detections: result.detections.filter((_, i) => i !== detectionIndex)
+    if (!annotationId) {
+      setError('Cannot delete detection: missing annotation ID')
+      return
+    }
+    
+    try {
+      // Call API to delete annotation from database
+      await workflowService.deleteBbox(annotationId)
+      
+      // Update local state after successful deletion
+      removeDetection(selectedImageIndex, detectionIndex)
+      
+      // Also update local detectionResults
+      const uniquePaths = [...new Set(detectionResults.map(r => r.image_path))]
+      const currentPath = uniquePaths[selectedImageIndex]
+      
+      // Update all results with this image path
+      const updatedResults = detectionResults.map(result => {
+        if (result.image_path === currentPath) {
+          return {
+            ...result,
+            detections: result.detections.filter((_, i) => i !== detectionIndex)
+          }
         }
-      }
-      return result
-    })
-    
-    setDetectionResults(updatedResults)
+        return result
+      })
+      
+      setDetectionResults(updatedResults)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete detection. Please try again.')
+    }
   }
 
   const handleNext = () => {
@@ -267,6 +298,11 @@ const Detection = () => {
       return
     }
     navigate('/identification')
+  }
+
+  const handleBackToUpload = () => {
+    resetWorkflow()
+    navigate('/upload')
   }
 
   // Get unique image paths for sidebar
@@ -391,7 +427,7 @@ const Detection = () => {
               <div className="mt-6 flex justify-between">
                 <Button
                   variant="outline"
-                  onClick={() => navigate('/upload')}
+                  onClick={handleBackToUpload}
                 >
                   Back to Upload
                 </Button>

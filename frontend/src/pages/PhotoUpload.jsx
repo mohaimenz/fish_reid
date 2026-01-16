@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Calendar, Upload as UploadIcon, X, PlayCircle } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
@@ -13,11 +13,29 @@ import useAuthStore from '../store/authStore'
 const PhotoUpload = () => {
   const navigate = useNavigate()
   const { images, metadata, setImages, setMetadata, updateMetadata, resetWorkflow } = useWorkflowStore()
-  const { resumeOption, setAuth, user, token } = useAuthStore()
+  const { setAuth, user, token } = useAuthStore()
   
   const [previews, setPreviews] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [hasUnfinishedWork, setHasUnfinishedWork] = useState(false)
+  const [isCheckingUnfinished, setIsCheckingUnfinished] = useState(true)
+
+  useEffect(() => {
+    const checkUnfinishedWork = async () => {
+      try {
+        const response = await workflowService.checkUnfinishedWork()
+        setHasUnfinishedWork(response?.has_unfinished_work || false)
+      } catch (err) {
+        // No unfinished work or error - don't show banner
+        setHasUnfinishedWork(false)
+      } finally {
+        setIsCheckingUnfinished(false)
+      }
+    }
+    
+    checkUnfinishedWork()
+  }, [])
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files)
@@ -78,6 +96,10 @@ const PhotoUpload = () => {
         // Store uploaded photo IDs if needed
         useWorkflowStore.getState().setPhotoIds(data.uploaded_photo_ids)
       }
+      // Clear images and previews after successful upload
+      previews.forEach(preview => URL.revokeObjectURL(preview.url))
+      setPreviews([])
+      setImages([])
       // Navigate to detection
       navigate('/detection')
     } catch (err) {
@@ -102,8 +124,9 @@ const PhotoUpload = () => {
     try {
       const response = await workflowService.discardUnidentifiedAnnotations()
       console.log('Discard successful:', response)
-      // Clear resumeOption from auth store to hide the banner
-      setAuth(user, token, false)
+      
+      // Update local state instead of authStore
+      setHasUnfinishedWork(false)
       
       // Clear workflow store completely
       resetWorkflow()
@@ -129,7 +152,7 @@ const PhotoUpload = () => {
             Upload underwater images and provide location metadata
           </p>
 
-          {resumeOption && (
+          {hasUnfinishedWork && (
             <Card className="mb-6 bg-blue-50 border-blue-200">
               <Card.Body>
                 <div className="flex items-center justify-between">

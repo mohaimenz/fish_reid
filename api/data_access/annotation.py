@@ -1,12 +1,12 @@
 from data_access.access import DB
-from collections import defaultdict
+from bson import ObjectId
 
 class Annotation:
     def __init__(self, user_id: str):
         self.user_id = user_id
         
-    def load_previously_saved_annotations(self):
-        # This function will load previously saved annotations from the database
+    def load_saved_annotations(self):
+        # This function will load saved annotations from the database
         # It joins 4 tables: Annotations, UserUploads, Users, IdentificationLogs
         # The tables are identical to the model defined in models.py
         # Users and UserUploads can be joined via user_id
@@ -73,6 +73,7 @@ class Annotation:
                 
                 if upload_id in results_map:
                     results_map[upload_id]['detections'].append({
+                        'annotation_id': str(ann['_id']),
                         'x_min': ann['x_min'],
                         'y_min': ann['y_min'],
                         'width': ann['width'],
@@ -90,10 +91,87 @@ class Annotation:
             db.close()
             return []
     
+    def delete_annotation(self, annotation_id: str):
+        # Delete a specific annotation by ID, ensuring it belongs to the user
+        db = DB()
+        db.connect()
+        
+        try:
+            annotations_collection = db.get_collection('annotations')
+            
+            # First, verify the annotation belongs to this user
+            annotation = annotations_collection.find_one({'_id': ObjectId(annotation_id)})
+            
+            if not annotation:
+                db.close()
+                return {'success': False, 'error': 'Annotation not found'}
+            
+            # Get the upload to verify ownership
+            user_uploads_collection = db.get_collection('user_uploads')
+            upload = user_uploads_collection.find_one({
+                '_id': ObjectId(annotation['user_upload_id']),
+                'user_id': self.user_id
+            })
+            
+            if not upload:
+                db.close()
+                return {'success': False, 'error': 'Unauthorized: Annotation does not belong to user'}
+            
+            # Delete the annotation
+            delete_result = annotations_collection.delete_one({'_id': ObjectId(annotation_id)})
+            db.close()
+            
+            if delete_result.deleted_count > 0:
+                return {'success': True}
+            else:
+                return {'success': False, 'error': 'Failed to delete annotation'}
+                
+        except Exception as e:
+            print(f"Error deleting annotation: {e}")
+            db.close()
+            return {'success': False, 'error': str(e)}
+    
+    def has_unfinished_work(self):
+        """Quick check if user has unidentified annotations"""
+        db = DB()
+        db.connect()
+        
+        try:
+            user_uploads_collection = db.get_collection('user_uploads')
+            uploads = list(user_uploads_collection.find({'user_id': self.user_id}))
+            
+            if not uploads:
+                db.close()
+                return False
+            
+            upload_ids = [str(u['_id']) for u in uploads]
+            
+            annotations_collection = db.get_collection('annotations')
+            annotations = list(annotations_collection.find({'user_upload_id': {'$in': upload_ids}}))
+            
+            if not annotations:
+                db.close()
+                return False
+            
+            # Check if any are unidentified
+            identification_logs = db.get_collection('identification_logs')
+            annotation_ids = [str(ann['_id']) for ann in annotations]
+            identified_logs = list(identification_logs.find({'annotation_id': {'$in': annotation_ids}}))
+            identified_ids = set(log['annotation_id'] for log in identified_logs)
+            
+            # Return true if any annotation is not identified
+            has_unfinished = any(str(ann['_id']) not in identified_ids for ann in annotations)
+            
+            db.close()
+            return has_unfinished
+            
+        except Exception as e:
+            print(f"Error checking unfinished work: {e}")
+            db.close()
+            return False
+    
     def delete_unidentified_annotations(self):
         # Delete all unidentified annotations for the user and return upload_ids
-        from bson import ObjectId
-        
         db = DB()
         db.connect()
         

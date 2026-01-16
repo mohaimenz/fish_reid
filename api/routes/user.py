@@ -29,13 +29,7 @@ async def Login(data: UserLogin):
             token = Auth().generate_token(user[0]['id'])
             # print(f"Generated token: {token}")
             # Coming to this point means authentication is successful
-            # Now check if the user has any incomplete actions in detection step.
-            has_pre_sessions = False
-            annotation_handler = Annotation(user_id=user[0]['id'])
-            previous_results = annotation_handler.load_previously_saved_annotations()
-            if previous_results and len(previous_results) > 0:
-                has_pre_sessions = True
-            return {'status': 'success', 'message': 'Login successful', 'user': f"{user[0]}", 'token': f"{token}", 'resume_option': has_pre_sessions}
+            return {'status': 'success', 'message': 'Login successful', 'user': f"{user[0]}", 'token': f"{token}"}
         
     else:
         return {'status': 'failure', 'message': 'Invalid credentials'}

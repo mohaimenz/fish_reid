@@ -40,10 +40,26 @@ const workflowService = {
     return response.data
   },
 
+  // Check if user has unfinished work (lightweight)
+  checkUnfinishedWork: async () => {
+    const endpoint = import.meta.env.VITE_CHECK_UNFINISHED_ENDPOINT || '/check-unfinished'
+    const response = await apiClient.get(endpoint)
+    return response.data
+  },
+
   // Discard all unidentified annotations
   discardUnidentifiedAnnotations: async () => {
     const endpoint = import.meta.env.VITE_DISCARD_PREV_UNFINISHED_ENDPOINT || '/discard-prev-unfinished'
     const response = await apiClient.delete(endpoint)
+    return response.data
+  },
+
+  // Delete a specific bounding box/annotation
+  deleteBbox: async (annotationId) => {
+    const endpoint = import.meta.env.VITE_DELETE_BBOX_ENDPOINT || '/delete-bbox'
+    const response = await apiClient.delete(endpoint, {
+      data: { annotationId }
+    })
     return response.data
   },
 }
