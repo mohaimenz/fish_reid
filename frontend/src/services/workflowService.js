@@ -78,6 +78,13 @@ const workflowService = {
     })
     return response.data
   },
+
+  // Get all sites for map selection
+  getSites: async () => {
+    const endpoint = import.meta.env.VITE_SITES_ENDPOINT || '/sites'
+    const response = await apiClient.get(endpoint)
+    return response.data
+  },
 }
 
 export default workflowService

@@ -12,7 +12,7 @@ class Fish(BaseModel):
     user_id: str
 
 class FishEmbedding(BaseModel):
-    id: str
+    id: Optional[PyObjectId] = Field(alias="_id", default = None)
     fish_id: str
     embeddings: str
     ai_model_name: str # ai model that generated the embeddings
@@ -26,10 +26,10 @@ class FishPairLogs(BaseModel):
     date_seen: datetime
 
 class Sites(BaseModel):
-    id: str
+    id: Optional[PyObjectId] = Field(alias="_id", default = None)
     name: str
     lat: float     
-    lon: float
+    long: float
     date_created: datetime
     date_modified: datetime
     is_active: bool

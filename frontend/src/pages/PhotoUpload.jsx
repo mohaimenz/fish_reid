@@ -6,6 +6,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import Alert from '../components/ui/Alert'
+import MapSelector from '../components/MapSelector'
 import useWorkflowStore from '../store/workflowStore'
 import workflowService from '../services/workflowService'
 import useAuthStore from '../store/authStore'
@@ -20,6 +21,9 @@ const PhotoUpload = () => {
   const [error, setError] = useState('')
   const [hasUnfinishedWork, setHasUnfinishedWork] = useState(false)
   const [isCheckingUnfinished, setIsCheckingUnfinished] = useState(true)
+  const [sites, setSites] = useState([])
+  const [selectedSiteId, setSelectedSiteId] = useState('')
+  const [isLoadingSites, setIsLoadingSites] = useState(true)
 
   useEffect(() => {
     const checkUnfinishedWork = async () => {
@@ -35,6 +39,22 @@ const PhotoUpload = () => {
     }
     
     checkUnfinishedWork()
+  }, [])
+
+  useEffect(() => {
+    const loadSites = async () => {
+      try {
+        const response = await workflowService.getSites()
+        setSites(response?.sites || [])
+      } catch (err) {
+        console.error('Failed to load sites:', err)
+        setSites([])
+      } finally {
+        setIsLoadingSites(false)
+      }
+    }
+    
+    loadSites()
   }, [])
 
   const handleFileChange = (e) => {
@@ -58,9 +78,10 @@ const PhotoUpload = () => {
     setImages(newImages)
   }
 
-  const handleMapClick = (lat, lng) => {
-    updateMetadata('latitude', lat)
-    updateMetadata('longitude', lng)
+  const handleSiteSelect = (site) => {
+    setSelectedSiteId(site.id)
+    updateMetadata('latitude', site.lat.toString())
+    updateMetadata('longitude', site.long.toString())
   }
 
   const handleSubmit = async () => {
@@ -73,7 +94,7 @@ const PhotoUpload = () => {
     }
     
     if (!metadata.latitude || !metadata.longitude) {
-      setError('Please provide location coordinates')
+      setError('Please select a site from the map')
       return
     }
     
@@ -88,6 +109,7 @@ const PhotoUpload = () => {
       formData.append('latitude', metadata.latitude)
       formData.append('longitude', metadata.longitude)
       formData.append('dateTime', metadata.dateTime)
+      formData.append('siteId', selectedSiteId)
       
       // Submit to API
       const data = await workflowService.uploadImages(formData)
@@ -253,13 +275,28 @@ const PhotoUpload = () => {
                   <h2 className="text-lg font-semibold">Location & Time</h2>
                 </Card.Header>
                 <Card.Body className="space-y-4">
+                  {/* Map Section */}
+                  <div className="mb-4">
+                    {isLoadingSites ? (
+                      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+                        <p className="text-gray-500">Loading sites...</p>
+                      </div>
+                    ) : sites.length > 0 ? (
+                      <MapSelector sites={sites} onSiteSelect={handleSiteSelect} />
+                    ) : (
+                      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center border border-gray-300">
+                        <p className="text-gray-500">No sites available. Please contact admin.</p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       label="Latitude"
                       type="number"
                       step="any"
                       value={metadata.latitude}
-                      onChange={(e) => updateMetadata('latitude', e.target.value)}
+                      readOnly
                       icon={<MapPin size={16} />}
                       required
                     />
@@ -268,7 +305,7 @@ const PhotoUpload = () => {
                       type="number"
                       step="any"
                       value={metadata.longitude}
-                      onChange={(e) => updateMetadata('longitude', e.target.value)}
+                      readOnly
                       icon={<MapPin size={16} />}
                       required
                     />
@@ -282,13 +319,6 @@ const PhotoUpload = () => {
                     icon={<Calendar size={16} />}
                     required
                   />
-
-                  {/* Map Placeholder */}
-                  <div className="h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <p className="text-gray-500">
-                      Interactive Map (Leaflet integration)
-                    </p>
-                  </div>
                 </Card.Body>
               </Card>
             </div>
