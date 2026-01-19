@@ -1,0 +1,8 @@
+python-dotenv
+PyJWT
+bcrypt
+fastapi
+uvicorn
+pydantic
+ultralytics
+python-multipart

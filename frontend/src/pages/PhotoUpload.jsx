@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Calendar, Upload as UploadIcon, X, PlayCircle } from 'lucide-react'
+import { MapPin, Calendar, Upload as UploadIcon, X, PlayCircle, Plus } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -24,6 +24,10 @@ const PhotoUpload = () => {
   const [sites, setSites] = useState([])
   const [selectedSiteId, setSelectedSiteId] = useState('')
   const [isLoadingSites, setIsLoadingSites] = useState(true)
+  const [isAddSiteOpen, setIsAddSiteOpen] = useState(false)
+  const [newSiteData, setNewSiteData] = useState({ name: '', lat: '', long: '' })
+  const [isCreatingSite, setIsCreatingSite] = useState(false)
+  const [siteFormError, setSiteFormError] = useState('')
 
   useEffect(() => {
     const checkUnfinishedWork = async () => {
@@ -82,6 +86,61 @@ const PhotoUpload = () => {
     setSelectedSiteId(site.id)
     updateMetadata('latitude', site.lat.toString())
     updateMetadata('longitude', site.long.toString())
+  }
+
+  const resetSiteModal = () => {
+    setNewSiteData({ name: '', lat: '', long: '' })
+    setSiteFormError('')
+    setIsAddSiteOpen(false)
+  }
+
+  const handleCreateSite = async () => {
+    setSiteFormError('')
+
+    if (!newSiteData.name || newSiteData.lat === '' || newSiteData.long === '') {
+      setSiteFormError('Please fill in all fields')
+      return
+    }
+
+    const parsedLat = parseFloat(newSiteData.lat)
+    const parsedLong = parseFloat(newSiteData.long)
+
+    if (Number.isNaN(parsedLat) || Number.isNaN(parsedLong)) {
+      setSiteFormError('Latitude and longitude must be valid numbers')
+      return
+    }
+
+    setIsCreatingSite(true)
+    try {
+      const response = await workflowService.createSite({
+        name: newSiteData.name.trim(),
+        lat: parsedLat,
+        long: parsedLong,
+      })
+
+      const createdSiteId = response?.site_id || response?.id
+      if (!createdSiteId) {
+        throw new Error('Site was created but no ID was returned.')
+      }
+
+      const createdSite = {
+        id: createdSiteId,
+        name: newSiteData.name.trim(),
+        lat: parsedLat,
+        long: parsedLong,
+      }
+
+      setSites((prevSites) => [createdSite, ...prevSites])
+      setIsLoadingSites(false)
+      setSelectedSiteId(createdSiteId)
+      updateMetadata('latitude', parsedLat.toString())
+      updateMetadata('longitude', parsedLong.toString())
+      resetSiteModal()
+    } catch (err) {
+      setSiteFormError(err.response?.data?.message || err.message || 'Failed to create site. Please try again.')
+    } finally {
+      setIsCreatingSite(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -275,6 +334,23 @@ const PhotoUpload = () => {
                   <h2 className="text-lg font-semibold">Location & Time</h2>
                 </Card.Header>
                 <Card.Body className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">Select a site on the map to auto-fill coordinates.</p>
+                      {selectedSiteId && (
+                        <p className="text-xs text-gray-500 mt-1">Site selected and coordinates populated.</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsAddSiteOpen(true)}
+                      icon={<Plus size={16} />}
+                    >
+                    Site
+                    </Button>
+                  </div>
+
                   {/* Map Section */}
                   <div className="mb-4">
                     {isLoadingSites ? (
@@ -337,6 +413,62 @@ const PhotoUpload = () => {
           </div>
         </div>
       </div>
+      {isAddSiteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Add Site</h3>
+              <button
+                onClick={resetSiteModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <Input
+                label="Site Name"
+                value={newSiteData.name}
+                onChange={(e) => setNewSiteData({ ...newSiteData, name: e.target.value })}
+                required
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="Latitude"
+                  type="number"
+                  step="any"
+                  value={newSiteData.lat}
+                  onChange={(e) => setNewSiteData({ ...newSiteData, lat: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Longitude"
+                  type="number"
+                  step="any"
+                  value={newSiteData.long}
+                  onChange={(e) => setNewSiteData({ ...newSiteData, long: e.target.value })}
+                  required
+                />
+              </div>
+              {siteFormError && (
+                <Alert type="error">{siteFormError}</Alert>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <Button variant="ghost" onClick={resetSiteModal} disabled={isCreatingSite}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreateSite}
+                disabled={isCreatingSite}
+              >
+                {isCreatingSite ? 'Saving...' : 'Save Site'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

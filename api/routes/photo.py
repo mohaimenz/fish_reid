@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, Depends, Response, Form
 import io
-from data_access.models import Annotations, Users
+from data_access.models import Annotations, Users, Sites
 from data_access.logic import Logic 
 from datetime import datetime
 from typing import List, Optional
@@ -39,6 +39,38 @@ async def GetSites(auth_data: dict=Depends(Auth().verify_token)):
     return {
         'status': 'success',
         'sites': sites_response
+    }
+
+@photo_routes.post("/site")
+async def CreateSite(
+    name: str = Form(...),
+    lat: float = Form(...),
+    long: float = Form(...),
+    auth_data: dict = Depends(Auth().verify_token)
+):
+    """Create a new site for the authenticated user"""
+    if auth_data.get("user_id") is None:
+        return {'status': 'failure', 'message': auth_data.get("status")}
+    print(f"Creating site: name={name}, lat={lat}, long={long} for user_id={auth_data.get('user_id')}")
+    user_id = auth_data.get("user_id")
+    
+    # Create new site object
+    new_site = Sites(
+        name=name,
+        lat=lat,
+        long=long,
+        user_id=user_id,
+        date_created=datetime.utcnow(),
+        date_modified=datetime.utcnow(),
+        is_active=True
+    )
+    
+    # Insert into database
+    inserted_site = Logic().insert(new_site)
+    
+    return {
+        'status': 'success',
+        'site_id': str(inserted_site)
     }
 
 @photo_routes.post("/upload")

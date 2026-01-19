@@ -85,6 +85,21 @@ const workflowService = {
     const response = await apiClient.get(endpoint)
     return response.data
   },
+
+  // Create a new site
+  createSite: async ({ name, lat, long }) => {
+    const endpoint = import.meta.env.VITE_CREATE_SITE_ENDPOINT || '/photo/site'
+    const formData = new FormData()
+    formData.append('name', name)
+    formData.append('lat', lat)
+    formData.append('long', long)
+    const response = await apiClient.post(endpoint, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
 }
 
 export default workflowService
