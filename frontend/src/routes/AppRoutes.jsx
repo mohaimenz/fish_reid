@@ -16,6 +16,8 @@ import PhotoUpload from '../pages/PhotoUpload'
 import Detection from '../pages/Detection'
 import Identification from '../pages/Identification'
 import TrackingHistory from '../pages/TrackingHistory'
+import SessionManager from '../pages/SessionManager'
+import FishManager from '../pages/FishManager'
 
 // Admin Pages
 import AdminDashboard from '../pages/AdminDashboard'
@@ -66,6 +68,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <TrackingHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="sessions"
+          element={
+            <ProtectedRoute>
+              <SessionManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="fishes"
+          element={
+            <ProtectedRoute>
+              <FishManager />
             </ProtectedRoute>
           }
         />

@@ -14,8 +14,15 @@ class Fish(BaseModel):
 class FishEmbedding(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default = None)
     fish_id: str
-    embeddings: str
+    user_id: str
+    source_session_id: Optional[str] = None
+    annotation_id: Optional[str] = None
+    user_upload_id: Optional[str] = None
+    crop_path: Optional[str] = None
+    embeddings: list[float]
+    embedding_dim: int
     ai_model_name: str # ai model that generated the embeddings
+    ai_model_version: Optional[str] = None
     date_created: datetime
 
 class FishPairLogs(BaseModel):
@@ -53,12 +60,14 @@ class UserLogin(BaseModel):
 class UserUploads(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default = None) #(file_name would be same as id.ext)
     user_id: str
+    session_id: str
     site_id: Optional[str] = None
     date_uploaded: datetime
 
 class Annotations(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default = None)
     user_upload_id: str
+    session_id: Optional[str] = None
     x_min: float
     y_min: float
     height: float
@@ -67,8 +76,26 @@ class Annotations(BaseModel):
     confidence: float
 
 class IdentificationLogs(BaseModel):
-    id: str
+    id: Optional[PyObjectId] = Field(alias="_id", default = None)
     annotation_id: str
-    fish_pair_id: str
+    fish_id: str
+    session_id: Optional[str] = None
     confidence: float
+    distance: Optional[float] = None
+    threshold: Optional[float] = None
+    ai_model_name: Optional[str] = None
+    ai_model_version: Optional[str] = None
+    is_new_identity: bool = False
     date_identified: datetime
+
+
+class WorkflowSession(BaseModel):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    user_id: str
+    name: Optional[str] = None
+    status: str = "in_progress"  # in_progress, completed, discarded
+    current_step: str = "upload"  # upload, detection, identification
+    site_id: Optional[str] = None
+    date_created: datetime
+    date_modified: datetime
+    date_completed: Optional[datetime] = None

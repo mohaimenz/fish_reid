@@ -6,3 +6,8 @@ uvicorn
 pydantic
 ultralytics
 python-multipart
+pymongo
+torch
+torchvision
+pillow
+numpy<2.0

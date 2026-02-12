@@ -7,10 +7,11 @@ import io
 from bson import ObjectId
 
 class Photo:
-    def __init__(self, user_id, site_id=None):
+    def __init__(self, user_id, site_id=None, session_id=None):
         self.user_id = user_id
         self.upload_time = datetime.now()
         self.site_id = site_id
+        self.session_id = session_id
 
     async def upload_photos(self, photo_list):
         # Logic to upload photos
@@ -22,6 +23,7 @@ class Photo:
                 print(f"Uploading file: {file.filename} for user: {self.user_id}")
                 user_upload = UserUploads(
                     user_id=self.user_id,
+                    session_id=self.session_id,
                     site_id=self.site_id,
                     date_uploaded=self.upload_time
                 )

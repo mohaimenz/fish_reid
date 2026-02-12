@@ -26,6 +26,40 @@ const workflowService = {
     return response.data
   },
 
+  getSessionIdentifications: async (sessionId) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const response = await apiClient.get(`${endpoint}/session/${sessionId}`)
+    return response.data
+  },
+
+  getIdentifiedFishList: async ({ page = 1, pageSize = 8 } = {}) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const response = await apiClient.get(`${endpoint}/fish`, {
+      params: {
+        page,
+        pageSize,
+      },
+    })
+    return response.data
+  },
+
+  createNewIdentity: async (annotationId) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const response = await apiClient.post(`${endpoint}/create-identity`, {
+      annotationId,
+    })
+    return response.data
+  },
+
+  assignIdentity: async ({ annotationId, fishId }) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const response = await apiClient.post(`${endpoint}/assign`, {
+      annotationId,
+      fishId,
+    })
+    return response.data
+  },
+
   // Get tracking history
   getTrackingHistory: async (fishId) => {
     const endpoint = import.meta.env.VITE_TRACKING_ENDPOINT || '/tracking'
@@ -34,23 +68,36 @@ const workflowService = {
   },
 
   // Get incomplete session (photos detected but not identified)
-  getIncompleteSession: async () => {
+  getIncompleteSession: async (sessionId = null, includeIdentified = false) => {
     const endpoint = import.meta.env.VITE_RESUME_DETECTION_ENDPOINT || '/resume-detection'
-    const response = await apiClient.get(endpoint)
+    const params = {}
+    if (sessionId) {
+      params.sessionId = sessionId
+    }
+    if (includeIdentified) {
+      params.includeIdentified = true
+    }
+    const response = await apiClient.get(endpoint, {
+      params: Object.keys(params).length > 0 ? params : undefined,
+    })
     return response.data
   },
 
   // Check if user has unfinished work (lightweight)
-  checkUnfinishedWork: async () => {
+  checkUnfinishedWork: async (sessionId = null) => {
     const endpoint = import.meta.env.VITE_CHECK_UNFINISHED_ENDPOINT || '/check-unfinished'
-    const response = await apiClient.get(endpoint)
+    const response = await apiClient.get(endpoint, {
+      params: sessionId ? { sessionId } : undefined,
+    })
     return response.data
   },
 
   // Discard all unidentified annotations
-  discardUnidentifiedAnnotations: async () => {
+  discardUnidentifiedAnnotations: async (sessionId = null) => {
     const endpoint = import.meta.env.VITE_DISCARD_PREV_UNFINISHED_ENDPOINT || '/discard-prev-unfinished'
-    const response = await apiClient.delete(endpoint)
+    const response = await apiClient.delete(endpoint, {
+      data: sessionId ? { sessionId } : {},
+    })
     return response.data
   },
 
@@ -98,6 +145,39 @@ const workflowService = {
         'Content-Type': 'multipart/form-data',
       },
     })
+    return response.data
+  },
+
+  createSession: async ({ name = null, siteId = null } = {}) => {
+    const endpoint = import.meta.env.VITE_SESSION_CREATE_ENDPOINT || '/session/create'
+    const response = await apiClient.post(endpoint, {
+      ...(name ? { name } : {}),
+      ...(siteId ? { siteId } : {}),
+    })
+    return response.data
+  },
+
+  getSessionHistory: async () => {
+    const endpoint = import.meta.env.VITE_SESSION_HISTORY_ENDPOINT || '/session/history'
+    const response = await apiClient.get(endpoint)
+    return response.data
+  },
+
+  getSession: async (sessionId) => {
+    const endpointBase = import.meta.env.VITE_SESSION_DETAIL_ENDPOINT || '/session'
+    const response = await apiClient.get(`${endpointBase}/${sessionId}`)
+    return response.data
+  },
+
+  completeSession: async (sessionId) => {
+    const endpointBase = import.meta.env.VITE_SESSION_DETAIL_ENDPOINT || '/session'
+    const response = await apiClient.post(`${endpointBase}/${sessionId}/complete`)
+    return response.data
+  },
+
+  deleteSession: async (sessionId) => {
+    const endpointBase = import.meta.env.VITE_SESSION_DETAIL_ENDPOINT || '/session'
+    const response = await apiClient.delete(`${endpointBase}/${sessionId}`)
     return response.data
   },
 }

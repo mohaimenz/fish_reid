@@ -1,0 +1,15 @@
+{
+  "source_run_dir": "facenet_cv_partial/facenet-valdisjoint-cv1-p8-k8-bs64-lr1e-3-20260209-165510",
+  "source_checkpoint": "facenet_cv_partial/facenet-valdisjoint-cv1-p8-k8-bs64-lr1e-3-20260209-165510/facenet-valdisjoint-cv1-p8-k8-bs64-lr1e-3-20260209-165510_best.pth",
+  "exported_state_dict": "facenet_partial_state_dict.pth",
+  "model": "FaceNetPartial",
+  "embedding_dim": 128,
+  "image_size": 224,
+  "distance_metric": "l2",
+  "threshold": 0.6177526116371155,
+  "far_threshold": 0.6395864486694336,
+  "far_target": 0.05,
+  "val_identity_disjoint": true,
+  "val_ids": 2,
+  "val_gallery_ratio": 0.5
+}

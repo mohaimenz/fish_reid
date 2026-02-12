@@ -4,6 +4,8 @@ const useWorkflowStore = create((set) => ({
   // Photo Upload State
   images: [],
   photoIds: [],
+  currentSessionId: null,
+  sessionHistory: [],
   metadata: {
     latitude: '',
     longitude: '',
@@ -23,6 +25,8 @@ const useWorkflowStore = create((set) => ({
 
   // Actions
   setPhotoIds: (ids) => set({ photoIds: ids }),
+  setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
+  setSessionHistory: (sessions) => set({ sessionHistory: sessions }),
   setImages: (images) => set({ images }),
   
   addImage: (image) => set((state) => ({ 
@@ -58,6 +62,8 @@ const useWorkflowStore = create((set) => ({
   resetWorkflow: () => set({
     images: [],
     photoIds: [],
+    currentSessionId: null,
+    sessionHistory: [],
     metadata: {
       latitude: '',
       longitude: '',

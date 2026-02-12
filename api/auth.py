@@ -44,7 +44,6 @@ class Auth:
             user = Logic().get_by_query("Users", {"_id": user_id, "is_active": True})
             if not user:
                 return_var = {"user_id": None, "status": "User not found or inactive"}
-                
             return_var = {"user_id": user_id, "status": "valid"}
         except jwt.ExpiredSignatureError:
             # raise Exception("Token has expired")

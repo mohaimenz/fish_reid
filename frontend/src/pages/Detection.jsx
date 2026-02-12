@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { X } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -13,15 +13,18 @@ const Detection = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isResuming = location.state?.isResuming || false
+  const routeSessionId = location.state?.sessionId || null
   const { 
     images, 
     photoIds,
+    currentSessionId,
     detections, 
     selectedImageIndex,
     setDetections, 
     setSelectedImageIndex,
     removeDetection,
     setPhotoIds,
+    setCurrentSessionId,
     resetWorkflow
   } = useWorkflowStore()
   
@@ -44,32 +47,37 @@ const Detection = () => {
     hasRun.current = true
     
     const initializeDetection = async () => {
-      // Guard: Unusual access - no new uploads and not resuming
-      if (!isResuming && photoIds.length === 0) {
-        navigate('/upload')
+      if (photoIds.length > 0) {
+        // New upload flow: run detection on current photo IDs.
+        runDetection(routeSessionId || currentSessionId)
         return
       }
 
-      if (isResuming) {
-        // Load from DB
+      const shouldTryResume = isResuming || !!routeSessionId || !!currentSessionId
+      if (shouldTryResume) {
+        // Session resume flow: load saved detections for selected/current session.
         try {
+          const effectiveSessionId = routeSessionId || currentSessionId || null
           setIsLoading(true)
-          const sessionData = await workflowService.getIncompleteSession()
+          const sessionData = await workflowService.getIncompleteSession(effectiveSessionId, true)
+          if (sessionData?.session_id) {
+            setCurrentSessionId(sessionData.session_id)
+          }
           if (sessionData && sessionData.results && sessionData.results.length > 0) {
             await processDetectionResults(sessionData.results)
           } else {
-            setError('No incomplete session found')
-            navigate('/upload')
+            setDetectionResults([])
+            setDetections([])
+            setError('No detections found for this session.')
           }
         } catch (err) {
-          setError('Failed to load incomplete session')
+          setError('Failed to load incomplete session.')
           navigate('/upload')
         } finally {
           setIsLoading(false)
         }
       } else {
-        // photoIds exist - run detection on new uploads
-        runDetection()
+        navigate('/upload')
       }
     }
     
@@ -96,14 +104,24 @@ const Detection = () => {
     await loadImagesFromPaths(results)
   }
 
-  const runDetection = async () => {
+  const runDetection = async (sessionId, { rerunDetection = false } = {}) => {
     setIsLoading(true)
     setError('')
     
     try {
       console.log('Running detection on photo IDs:', photoIds)
-      const response = await workflowService.detect({ photoIds })
+      const payload = { photoIds: rerunDetection ? [] : photoIds }
+      if (sessionId) {
+        payload.sessionId = sessionId
+      }
+      if (rerunDetection) {
+        payload.rerunDetection = true
+      }
+      const response = await workflowService.detect(payload)
       console.log('Detection response:', response)
+      if (response?.session_id) {
+        setCurrentSessionId(response.session_id)
+      }
       
       await processDetectionResults(response.results)
       
@@ -114,6 +132,23 @@ const Detection = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleRunDetectionAgain = async () => {
+    const targetSessionId = routeSessionId || currentSessionId
+    if (!targetSessionId) {
+      setError('No workflow session selected.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Running detection again will remove all existing detections, manual annotations, and associated identifications for this session. Do you want to continue?'
+    )
+    if (!confirmed) {
+      return
+    }
+
+    await runDetection(targetSessionId, { rerunDetection: true })
   }
 
   // Group detections by unique image paths
@@ -340,7 +375,11 @@ const Detection = () => {
   }
 
   const handleBackToUpload = () => {
+    const preservedSessionId = currentSessionId
     resetWorkflow()
+    if (preservedSessionId) {
+      setCurrentSessionId(preservedSessionId)
+    }
     navigate('/upload')
   }
 
@@ -398,6 +437,7 @@ const Detection = () => {
       
       const response = await workflowService.saveManualAnnotation({
         user_upload_id: upload_id,
+        sessionId: currentSessionId,
         ...tempAnnotation
       })
       
@@ -435,6 +475,10 @@ const Detection = () => {
     if (!confirmed) return
     
     const currentResult = getCurrentImageResult()
+    if (!currentResult) {
+      setError('No image is available to delete.')
+      return
+    }
     const uploadId = currentResult.user_upload_id || currentResult.id
     
     try {
@@ -500,6 +544,17 @@ const Detection = () => {
             Review and verify detected RabbitFish instances
           </p>
 
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={handleRunDetectionAgain}
+              disabled={isLoading || !(routeSessionId || currentSessionId)}
+              className="border-red-500 text-red-600 hover:bg-red-50"
+            >
+              Run Detection Again
+            </Button>
+          </div>
+
           {error && (
             <Alert type="error" className="mb-6">
               {error}
@@ -511,7 +566,7 @@ const Detection = () => {
             <div className="lg:col-span-1">
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-semibold">Images</h2>
+                  <h2 className="text-lg font-semibold">Uploaded Images</h2>
                 </Card.Header>
                 <Card.Body className="space-y-2">
                   {uniqueImagePaths.map((path, index) => (
@@ -553,7 +608,7 @@ const Detection = () => {
                         setIsDrawingMode(!isDrawingMode)
                         if (tempAnnotation) setTempAnnotation(null)
                       }}
-                      disabled={tempAnnotation !== null}
+                      disabled={tempAnnotation !== null || !getCurrentImageResult()}
                     >
                       {isDrawingMode ? '🎨 Drawing Mode ON' : '➕ Draw Annotation'}
                     </Button>
@@ -567,13 +622,15 @@ const Detection = () => {
                   {/* Main Image with Bounding Boxes */}
                   <div ref={containerRef} className="bg-gray-900 rounded-lg mb-6 relative">
                     {/* Delete Image Button */}
-                    <button
-                      onClick={handleDeleteImage}
-                      className="absolute -top-3 -right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-colors"
-                      title="Delete this image and all its annotations"
-                    >
-                      <X size={20} />
-                    </button>
+                    {getCurrentImageResult() && (
+                      <button
+                        onClick={handleDeleteImage}
+                        className="absolute -top-3 -right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-colors"
+                        title="Delete this image and all its annotations"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                     
                     {getCurrentImageResult() && loadedImages[getCurrentImageResult().image_path] ? (
                       <>
@@ -595,7 +652,7 @@ const Detection = () => {
                             }}
                             title="Delete detection"
                           >
-                            <X size={12} />
+                            <Trash2 size={12} />
                           </button>
                         ))}
                         
@@ -621,7 +678,7 @@ const Detection = () => {
                       </>
                     ) : (
                       <div className="aspect-video flex items-center justify-center">
-                        <p className="text-white">Loading image...</p>
+                        <p className="text-white">No detections available for this session.</p>
                       </div>
                     )}
                   </div>

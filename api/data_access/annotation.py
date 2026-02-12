@@ -2,10 +2,17 @@ from data_access.access import DB
 from bson import ObjectId
 
 class Annotation:
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str, session_id: str | None = None):
         self.user_id = user_id
+        self.session_id = session_id
+
+    def _get_upload_query(self):
+        query = {'user_id': self.user_id}
+        if self.session_id:
+            query['session_id'] = self.session_id
+        return query
         
-    def load_saved_annotations(self):
+    def load_saved_annotations(self, include_identified: bool = False):
         # This function will load saved annotations from the database
         # It joins 4 tables: Annotations, UserUploads, Users, IdentificationLogs
         # The tables are identical to the model defined in models.py
@@ -21,7 +28,7 @@ class Annotation:
         try:
             # Step 1: Load all user_uploads filtered by user_id
             user_uploads_collection = db.get_collection('user_uploads')
-            all_uploads = list(user_uploads_collection.find({'user_id': self.user_id}))
+            all_uploads = list(user_uploads_collection.find(self._get_upload_query()))
             
             if not all_uploads:
                 db.close()
@@ -32,28 +39,38 @@ class Annotation:
             
             # Step 2: Load annotations only for those uploads
             annotations_collection = db.get_collection('annotations')
-            annotations = list(annotations_collection.find({
-                'user_upload_id': {'$in': upload_ids}
-            }))
+            annotation_query = {'user_upload_id': {'$in': upload_ids}}
+            if self.session_id:
+                annotation_query['session_id'] = self.session_id
+            annotations = list(annotations_collection.find(annotation_query))
             
-            # Step 3: Get identification logs to filter out identified annotations
+            # Step 3: Get identification logs to optionally filter identified annotations
             identification_logs_collection = db.get_collection('identification_logs')
             identified_annotation_ids = set()
             
             if annotations:
                 annotation_ids = [str(ann['_id']) for ann in annotations]
-                identified_logs = list(identification_logs_collection.find({
-                    'annotation_id': {'$in': annotation_ids}
-                }))
+                log_query = {
+                    'annotation_id': {'$in': annotation_ids},
+                    'fish_id': {'$exists': True, '$nin': [None, '']},
+                }
+                if self.session_id:
+                    log_query['session_id'] = self.session_id
+                identified_logs = list(identification_logs_collection.find(log_query))
                 
                 for log in identified_logs:
                     identified_annotation_ids.add(log['annotation_id'])
             
-            # Step 4: Filter annotations that are not identified yet
-            unidentified_annotations = [
-                ann for ann in annotations 
-                if str(ann['_id']) not in identified_annotation_ids
-            ]
+            # Step 4: Choose which annotations to return.
+            # By default we return only unfinished annotations, but session-resume
+            # views can request full session annotations (identified + unidentified).
+            if include_identified:
+                selected_annotations = annotations
+            else:
+                selected_annotations = [
+                    ann for ann in annotations
+                    if str(ann['_id']) not in identified_annotation_ids
+                ]
             
             # Step 5: Group annotations by user_upload_id (image)
             # Initialize results_map with all uploads (even those without annotations)
@@ -63,23 +80,26 @@ class Annotation:
                 image_path = f'uploads/{self.user_id}/{upload_id}.jpg'
                 results_map[upload_id] = {
                     'id': upload_id,
+                    'session_id': str(upload.get('session_id')) if upload.get('session_id') else None,
                     'image_path': image_path,
                     'detections': []
                 }
             
             # Add annotatialltheir respective uploads
-            for ann in unidentified_annotations:
+            for ann in selected_annotations:
                 upload_id = ann['user_upload_id']
                 
                 if upload_id in results_map:
+                    ann_id = str(ann['_id'])
                     results_map[upload_id]['detections'].append({
-                        'annotation_id': str(ann['_id']),
+                        'annotation_id': ann_id,
                         'x_min': ann['x_min'],
                         'y_min': ann['y_min'],
                         'width': ann['width'],
                         'height': ann['height'],
                         'class_name': ann['class_name'],
-                        'confidence': ann['confidence']
+                        'confidence': ann['confidence'],
+                        'is_identified': ann_id in identified_annotation_ids,
                     })
             
             results = list(results_map.values())
@@ -112,6 +132,9 @@ class Annotation:
                 '_id': ObjectId(annotation['user_upload_id']),
                 'user_id': self.user_id
             })
+            if upload and self.session_id and str(upload.get('session_id')) != self.session_id:
+                db.close()
+                return {'success': False, 'error': 'Annotation does not belong to this workflow session'}
             
             if not upload:
                 db.close()
@@ -138,7 +161,7 @@ class Annotation:
         
         try:
             user_uploads_collection = db.get_collection('user_uploads')
-            uploads = list(user_uploads_collection.find({'user_id': self.user_id}))
+            uploads = list(user_uploads_collection.find(self._get_upload_query()))
             
             if not uploads:
                 db.close()
@@ -147,7 +170,10 @@ class Annotation:
             upload_ids = [str(u['_id']) for u in uploads]
             
             annotations_collection = db.get_collection('annotations')
-            annotations = list(annotations_collection.find({'user_upload_id': {'$in': upload_ids}}))
+            annotation_query = {'user_upload_id': {'$in': upload_ids}}
+            if self.session_id:
+                annotation_query['session_id'] = self.session_id
+            annotations = list(annotations_collection.find(annotation_query))
             
             if not annotations:
                 db.close()
@@ -156,7 +182,13 @@ class Annotation:
             # Check if any are unidentified
             identification_logs = db.get_collection('identification_logs')
             annotation_ids = [str(ann['_id']) for ann in annotations]
-            identified_logs = list(identification_logs.find({'annotation_id': {'$in': annotation_ids}}))
+            log_query = {
+                'annotation_id': {'$in': annotation_ids},
+                'fish_id': {'$exists': True, '$nin': [None, '']},
+            }
+            if self.session_id:
+                log_query['session_id'] = self.session_id
+            identified_logs = list(identification_logs.find(log_query))
             identified_ids = set(log['annotation_id'] for log in identified_logs)
             
             # Return true if any annotation is not identified
@@ -178,7 +210,7 @@ class Annotation:
         try:
             # Step 1: Load all user_uploads filtered by user_id
             user_uploads_collection = db.get_collection('user_uploads')
-            all_uploads = list(user_uploads_collection.find({'user_id': self.user_id}))
+            all_uploads = list(user_uploads_collection.find(self._get_upload_query()))
             
             if not all_uploads:
                 db.close()
@@ -189,9 +221,10 @@ class Annotation:
             
             # Step 2: Load annotations for those uploads
             annotations_collection = db.get_collection('annotations')
-            annotations = list(annotations_collection.find({
-                'user_upload_id': {'$in': upload_ids}
-            }))
+            annotation_query = {'user_upload_id': {'$in': upload_ids}}
+            if self.session_id:
+                annotation_query['session_id'] = self.session_id
+            annotations = list(annotations_collection.find(annotation_query))
             
             deleted_count = 0
             
@@ -200,9 +233,13 @@ class Annotation:
                 # Get identification logs to filter out identified annotations
                 identification_logs_collection = db.get_collection('identification_logs')
                 annotation_ids = [str(ann['_id']) for ann in annotations]
-                identified_logs = list(identification_logs_collection.find({
-                    'annotation_id': {'$in': annotation_ids}
-                }))
+                log_query = {
+                    'annotation_id': {'$in': annotation_ids},
+                    'fish_id': {'$exists': True, '$nin': [None, '']},
+                }
+                if self.session_id:
+                    log_query['session_id'] = self.session_id
+                identified_logs = list(identification_logs_collection.find(log_query))
                 
                 identified_annotation_ids = set(log['annotation_id'] for log in identified_logs)
                 
@@ -221,9 +258,10 @@ class Annotation:
                     deleted_count = delete_result.deleted_count
             
             # Step 4: Find ALL uploads that have NO annotations (after deletion)
-            remaining_annotations = list(annotations_collection.find({
-                'user_upload_id': {'$in': upload_ids}
-            }))
+            remaining_query = {'user_upload_id': {'$in': upload_ids}}
+            if self.session_id:
+                remaining_query['session_id'] = self.session_id
+            remaining_annotations = list(annotations_collection.find(remaining_query))
             
             # Get upload_ids that still have annotations
             upload_ids_with_annotations = set([ann['user_upload_id'] for ann in remaining_annotations])

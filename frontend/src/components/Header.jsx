@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, User, Shield } from 'lucide-react'
+import { Fish, FolderOpen, LogOut, Shield, User } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import authService from '../services/authService'
 import Button from './ui/Button'
@@ -48,6 +48,20 @@ const Header = () => {
               </>
             ) : (
               <>
+                <Link
+                  to="/sessions"
+                  className="flex items-center space-x-1 text-gray-600 hover:text-primary-600"
+                >
+                  <FolderOpen size={18} />
+                  <span>Sessions</span>
+                </Link>
+                <Link
+                  to="/fishes"
+                  className="flex items-center space-x-1 text-gray-600 hover:text-primary-600"
+                >
+                  <Fish size={18} />
+                  <span>Fishes</span>
+                </Link>
                 {user?.role === 'admin' && (
                   <Link
                     to="/admin"

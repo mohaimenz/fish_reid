@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
@@ -18,6 +18,7 @@ const Login = () => {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [apiError, setApiError] = useState('')
+  const formRef = useRef(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -72,6 +73,18 @@ const Login = () => {
     }
   }
 
+  const handleFormKeyDown = (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.isComposing) {
+      return
+    }
+
+    // Ensure Enter submits consistently across inputs/browsers.
+    if (formRef.current) {
+      e.preventDefault()
+      formRef.current.requestSubmit()
+    }
+  }
+
   return (
     <Card>
       <Card.Header>
@@ -86,7 +99,7 @@ const Login = () => {
           </Alert>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="space-y-4">
           <Input
             label="Email"
             type="email"
