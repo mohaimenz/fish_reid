@@ -60,6 +60,51 @@ const workflowService = {
     return response.data
   },
 
+  updateFishAlias: async ({ fishId, fishAlias }) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const response = await apiClient.patch(`${endpoint}/fish/${fishId}/alias`, {
+      fishAlias,
+    })
+    return response.data
+  },
+
+  generateVisualization: async ({
+    queryAnnotationId = null,
+    matchAnnotationId = null,
+    visualizationVariant = 'gradcam',
+    forceRegenerate = false,
+  } = {}) => {
+    const endpoint = import.meta.env.VITE_IDENTIFY_ENDPOINT || '/identify'
+    const payload = {
+      visualizationVariant,
+      forceRegenerate,
+      ...(queryAnnotationId ? { queryAnnotationId } : {}),
+      ...(matchAnnotationId ? { matchAnnotationId } : {}),
+    }
+    const response = await apiClient.post(`${endpoint}/visualization`, payload)
+    return response.data
+  },
+
+  getSessionPairing: async (sessionId) => {
+    const response = await apiClient.get(`/pairing/session/${sessionId}`)
+    return response.data
+  },
+
+  getFishPairHistory: async ({ fishId, sessionId = null }) => {
+    const response = await apiClient.get(`/pairing/fish/${fishId}/history`, {
+      params: sessionId ? { sessionId } : undefined,
+    })
+    return response.data
+  },
+
+  assignSessionPair: async ({ sessionId, fishId, pairFishId }) => {
+    const response = await apiClient.post(`/pairing/session/${sessionId}/assign`, {
+      fishId,
+      pairFishId,
+    })
+    return response.data
+  },
+
   // Get tracking history
   getTrackingHistory: async (fishId) => {
     const endpoint = import.meta.env.VITE_TRACKING_ENDPOINT || '/tracking'

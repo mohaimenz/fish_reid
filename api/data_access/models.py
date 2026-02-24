@@ -5,6 +5,7 @@ from typing import Optional, Annotated
 PyObjectId = Annotated[str, BeforeValidator(str)]
 class Fish(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default = None)
+    fish_alias: Optional[str] = None
     site_id: str
     date_created: datetime
     date_modified: datetime
@@ -26,11 +27,16 @@ class FishEmbedding(BaseModel):
     date_created: datetime
 
 class FishPairLogs(BaseModel):
-    id: str
-    fish_id_1: str
-    fish_id_2: str
-    site_id: str
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    user_id: str
+    session_id: Optional[str] = None
+    fish_id_a: str
+    fish_id_b: str
+    site_id: Optional[str] = None
+    source: Optional[str] = None
     date_seen: datetime
+    date_created: datetime
+    date_modified: datetime
 
 class Sites(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default = None)
@@ -94,7 +100,7 @@ class WorkflowSession(BaseModel):
     user_id: str
     name: Optional[str] = None
     status: str = "in_progress"  # in_progress, completed, discarded
-    current_step: str = "upload"  # upload, detection, identification
+    current_step: str = "upload"  # upload, detection, identification, pair_matching
     site_id: Optional[str] = None
     date_created: datetime
     date_modified: datetime

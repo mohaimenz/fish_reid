@@ -6,6 +6,7 @@ const steps = [
   { id: 1, name: 'Photo Upload', path: '/upload' },
   { id: 2, name: 'Detection', path: '/detection' },
   { id: 3, name: 'Identification', path: '/identification' },
+  { id: 4, name: 'Pair Matching', path: '/pair-matching' },
 ]
 
 const WorkflowStepper = ({ currentStep = 1 }) => {
@@ -18,7 +19,11 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
       navigate(stepPath, { state: { isResuming: true, sessionId: currentSessionId || null } })
       return
     }
-    if (stepPath === '/identification' && detections.flat().length === 0 && currentSessionId) {
+    if (stepPath === '/pair-matching' && !currentSessionId) {
+      navigate('/identification')
+      return
+    }
+    if (stepPath === '/identification' && detections.flat().length === 0 && !currentSessionId) {
       navigate('/detection', { state: { isResuming: true, sessionId: currentSessionId } })
       return
     }
@@ -26,65 +31,69 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Workflow</h2>
-      <nav className="space-y-2">
-        {steps.map((step) => {
-          const isCompleted = step.id < currentStep
-          const isCurrent = step.id === currentStep
-          const isUpcoming = step.id > currentStep
-          const isClickable = step.id <= currentStep
+    <aside className="workflow-rail">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_14px_rgba(15,23,42,0.05)]">
+        <h2 className="mb-1 text-lg font-bold text-slate-900">Workflow</h2>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Upload to Pair Matching
+        </p>
+        <nav className="relative mt-4 space-y-2">
+          <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px bg-slate-200" />
+          {steps.map((step) => {
+            const isCompleted = step.id < currentStep
+            const isCurrent = step.id === currentStep
+            const isUpcoming = step.id > currentStep
+            const isClickable = step.id <= currentStep
 
-          return (
-            <div
-              key={step.id}
-              onClick={() => handleStepNavigation(step.id, step.path)}
-              role="button"
-              tabIndex={isClickable ? 0 : -1}
-              onKeyDown={(event) => {
-                if (!isClickable) return
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  handleStepNavigation(step.id, step.path)
-                }
-              }}
-              className={`
-                flex items-center p-3 rounded-lg transition-colors
-                ${isCurrent ? 'bg-primary-50 border-2 border-primary-500' : ''}
-                ${isCompleted ? 'bg-green-50' : ''}
-                ${isUpcoming ? 'bg-gray-50 opacity-50' : ''}
-                ${isClickable ? 'cursor-pointer hover:bg-gray-100' : 'cursor-not-allowed'}
-              `}
-            >
-              <div
+            return (
+              <button
+                type="button"
+                key={step.id}
+                onClick={() => handleStepNavigation(step.id, step.path)}
+                disabled={!isClickable}
                 className={`
-                  flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center
-                  ${isCurrent ? 'bg-primary-600 text-white' : ''}
-                  ${isCompleted ? 'bg-green-600 text-white' : ''}
-                  ${isUpcoming ? 'bg-gray-300 text-gray-600' : ''}
+                  relative flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors
+                  ${isCurrent ? 'border-primary-300 bg-primary-50' : ''}
+                  ${isCompleted ? 'border-emerald-200 bg-emerald-50' : ''}
+                  ${isUpcoming ? 'border-slate-200 bg-slate-50/80' : ''}
+                  ${isClickable ? 'hover:border-primary-200 hover:bg-primary-50/70' : 'cursor-not-allowed opacity-70'}
                 `}
               >
-                {isCompleted ? (
-                  <Check size={18} />
-                ) : (
-                  <span className="text-sm font-semibold">{step.id}</span>
-                )}
-              </div>
-              <span
-                className={`
-                  ml-3 text-sm font-medium
-                  ${isCurrent ? 'text-primary-900' : ''}
-                  ${isCompleted ? 'text-green-900' : ''}
-                  ${isUpcoming ? 'text-gray-500' : ''}
-                `}
-              >
-                {step.name}
-              </span>
-            </div>
-          )
-        })}
-      </nav>
-    </div>
+                <div
+                  className={`
+                    relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold
+                    ${isCurrent ? 'bg-primary-600 text-white' : ''}
+                    ${isCompleted ? 'bg-emerald-600 text-white' : ''}
+                    ${isUpcoming ? 'bg-slate-300 text-slate-700' : ''}
+                  `}
+                >
+                  {isCompleted ? (
+                    <Check size={18} />
+                  ) : (
+                    <span>{step.id}</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className={`
+                      text-sm font-semibold
+                      ${isCurrent ? 'text-primary-900' : ''}
+                      ${isCompleted ? 'text-emerald-900' : ''}
+                      ${isUpcoming ? 'text-slate-600' : ''}
+                    `}
+                  >
+                    {step.name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {isCompleted ? 'Completed' : isCurrent ? 'Current step' : 'Upcoming'}
+                  </p>
+                </div>
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+    </aside>
   )
 }
 

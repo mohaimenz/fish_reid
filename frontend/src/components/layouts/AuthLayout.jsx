@@ -2,13 +2,15 @@ import { Outlet } from 'react-router-dom'
 
 const AuthLayout = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 stagger-in">
           <h1 className="text-3xl font-bold text-primary-700">RabbitFish Tracker</h1>
-          <p className="text-gray-600 mt-2">ML-based Fish Detection & Tracking</p>
+          <p className="mt-2 text-slate-600">Marine Identification and Tracking Platform</p>
         </div>
-        <Outlet />
+        <div className="stagger-in">
+          <Outlet />
+        </div>
       </div>
     </div>
   )

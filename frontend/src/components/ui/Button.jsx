@@ -12,34 +12,46 @@ const Button = ({
   className = '',
   ...props 
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseStyles =
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border font-medium leading-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none'
   
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+    primary:
+      'border-primary-700 bg-primary-700 text-white shadow-sm hover:border-primary-800 hover:bg-primary-800 focus-visible:ring-primary-500',
+    secondary:
+      'border-slate-700 bg-slate-700 text-white shadow-sm hover:border-slate-800 hover:bg-slate-800 focus-visible:ring-slate-500',
+    outline:
+      'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-primary-500',
+    danger:
+      'border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100 focus-visible:ring-red-500',
+    light:
+      'border-white bg-white text-slate-900 hover:bg-slate-100 focus-visible:ring-slate-300',
+    ghost:
+      'border-transparent bg-transparent text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-500',
   }
   
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+    sm: 'h-8 px-3 text-[13px]',
+    md: 'h-9 px-3.5 text-sm',
+    lg: 'h-10 px-4 text-sm',
   }
   
   const classes = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`
   
   const content = (
     <>
-      {icon && <span className="mr-2">{icon}</span>}
+      {icon && <span className="shrink-0">{icon}</span>}
       {children}
     </>
   )
   
   if (to) {
     return (
-      <RouterLink to={to} className={classes} {...props}>
+      <RouterLink
+        to={to}
+        className={`${classes} ${disabled ? 'pointer-events-none' : ''}`}
+        {...props}
+      >
         {content}
       </RouterLink>
     )

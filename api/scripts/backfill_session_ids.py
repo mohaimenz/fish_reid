@@ -41,7 +41,7 @@ def _infer_session_state(
     if annotations_count == 0:
         return "upload", "in_progress"
     if identified_count >= annotations_count:
-        return "tracking", "completed"
+        return "pair_matching", "completed"
     if identified_count > 0:
         return "identification", "in_progress"
     return "detection", "in_progress"

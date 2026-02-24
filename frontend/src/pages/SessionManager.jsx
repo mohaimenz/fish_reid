@@ -48,7 +48,12 @@ const SessionManager = () => {
       return
     }
 
-    if (session.current_step === 'identification' || session.current_step === 'tracking' || session.status === 'completed') {
+    if (session.current_step === 'pair_matching' || session.current_step === 'tracking' || session.status === 'completed') {
+      navigate('/pair-matching')
+      return
+    }
+
+    if (session.current_step === 'identification') {
       navigate('/identification')
       return
     }
@@ -78,12 +83,12 @@ const SessionManager = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-start justify-between mb-6">
+    <div className="page-shell">
+      <div className="page-container">
+        <div className="page-header">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Sessions</h1>
-            <p className="text-gray-600">
+            <h1 className="page-title">Manage Sessions</h1>
+            <p className="page-subtitle">
               Open or delete workflow sessions. Deleting a session removes all associated data.
             </p>
           </div>
@@ -114,22 +119,22 @@ const SessionManager = () => {
             </Card.Body>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {sessionHistory.map((session) => (
-              <Card key={session.id}>
+              <Card key={session.id} className="stagger-in">
                 <Card.Body>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-slate-900">
                         {session.name || `Session ${session.id.slice(-6)}`}
                       </p>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-slate-600 mt-1">
                         Status: {session.status} | Step: {session.current_step}
                       </p>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-slate-600 mt-1">
                         Uploads: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Identified: {session.stats?.identified_count || 0}
                       </p>
-                      <p className="text-sm text-gray-600 mt-1">Session ID: {session.id}</p>
+                      <p className="text-xs text-slate-500 mt-1">Session ID: {session.id}</p>
                     </div>
 
                     <div className="flex gap-2">

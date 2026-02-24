@@ -20,6 +20,10 @@ const FishManager = () => {
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
+  const [editingFishId, setEditingFishId] = useState(null)
+  const [fishAliasDraft, setFishAliasDraft] = useState('')
+  const [savingFishId, setSavingFishId] = useState(null)
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
   const resolveImageUrl = (relativePath) => {
@@ -41,6 +45,7 @@ const FishManager = () => {
 
   const loadFishes = async (targetPage = page) => {
     setError('')
+    setInfoMessage('')
     setIsLoading(true)
     try {
       const response = await workflowService.getIdentifiedFishList({
@@ -70,14 +75,63 @@ const FishManager = () => {
     navigate('/tracking')
   }
 
+  const handleStartEditAlias = (fishId, currentAlias) => {
+    setEditingFishId(fishId)
+    setFishAliasDraft(currentAlias || '')
+    setError('')
+    setInfoMessage('')
+  }
+
+  const handleCancelEditAlias = () => {
+    setEditingFishId(null)
+    setFishAliasDraft('')
+  }
+
+  const handleSaveFishAlias = async (fishId) => {
+    if (!fishId) return
+    setError('')
+    setInfoMessage('')
+    setSavingFishId(fishId)
+    try {
+      const response = await workflowService.updateFishAlias({
+        fishId,
+        fishAlias: fishAliasDraft,
+      })
+      const savedAlias =
+        response?.fishAlias ?? response?.fish_alias ?? response?.fishName ?? response?.fish_name ?? null
+      setFishes((prev) =>
+        prev.map((fish) => {
+          const rowFishId = fish?.fishId || fish?.fish_id || null
+          if (rowFishId !== fishId) return fish
+          return {
+            ...fish,
+            fishAlias: savedAlias,
+            fish_alias: savedAlias,
+          }
+        })
+      )
+      setInfoMessage(
+        savedAlias
+          ? `Saved alias "${savedAlias}" for fish #${formatFishIdForDisplay(fishId)}.`
+          : `Cleared alias for fish #${formatFishIdForDisplay(fishId)}.`
+      )
+      setEditingFishId(null)
+      setFishAliasDraft('')
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save fish alias.')
+    } finally {
+      setSavingFishId(null)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-start justify-between mb-6 gap-3">
+    <div className="page-shell">
+      <div className="page-container">
+        <div className="page-header">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Fishes</h1>
-            <p className="text-gray-600">
-              All identified fishes across sessions. Open one to view tracking history.
+            <h1 className="page-title">Fishes</h1>
+            <p className="page-subtitle">
+              Central registry of identified fishes across sessions.
             </p>
           </div>
 
@@ -100,7 +154,9 @@ const FishManager = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setPage((prev) => (totalPages > 0 ? Math.min(prev + 1, totalPages) : prev))}
+              onClick={() =>
+                setPage((prev) => (totalPages > 0 ? Math.min(prev + 1, totalPages) : prev))
+              }
               disabled={isLoading || totalPages === 0 || page >= totalPages}
               icon={<ChevronRight size={16} />}
             >
@@ -110,78 +166,160 @@ const FishManager = () => {
         </div>
 
         {error && (
-          <Alert type="error" className="mb-6">
+          <Alert type="error" className="mb-5">
             {error}
           </Alert>
         )}
-
-        <div className="mb-4 text-sm text-gray-600">
-          {total > 0
-            ? `Showing page ${page} of ${totalPages} (${total} fishes total)`
-            : 'No identified fishes yet'}
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Spinner size="lg" />
-          </div>
-        ) : fishes.length === 0 ? (
-          <Card>
-            <Card.Body>
-              <p className="text-gray-600">No fishes found.</p>
-            </Card.Body>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fishes.map((fish) => {
-              const fishId = fish?.fishId || fish?.fish_id || null
-              const sightingsCount = fish?.sightingsCount || fish?.sightings_count || 0
-              const previewPath = fish?.previewPath || fish?.preview_path || ''
-              const lastIdentifiedAt = fish?.lastIdentifiedAt || fish?.last_identified_at || null
-              const lastConfidence = fish?.lastConfidence || fish?.last_confidence
-              if (!fishId) return null
-
-              return (
-                <Card key={fishId}>
-                  <Card.Body>
-                    <div className="bg-gray-200 rounded-lg h-44 overflow-hidden mb-3 flex items-center justify-center">
-                      {previewPath ? (
-                        <img
-                          src={resolveImageUrl(previewPath)}
-                          alt={`Fish ${formatFishIdForDisplay(fishId)}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <p className="text-sm text-gray-500">No preview</p>
-                      )}
-                    </div>
-
-                    <p className="text-base font-semibold text-gray-900">
-                      Fish #{formatFishIdForDisplay(fishId)}
-                    </p>
-                    <p className="text-xs text-gray-500 break-all mt-1">ID: {fishId}</p>
-                    <p className="text-sm text-gray-600 mt-2">Sightings: {sightingsCount}</p>
-                    <p className="text-sm text-gray-600">Last seen: {formatDateLabel(lastIdentifiedAt)}</p>
-                    <p className="text-sm text-gray-600">
-                      Last confidence:{' '}
-                      {typeof lastConfidence === 'number' ? `${(lastConfidence * 100).toFixed(1)}%` : 'N/A'}
-                    </p>
-
-                    <div className="mt-4">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleOpenTracking(fishId)}
-                      >
-                        Open Tracking
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              )
-            })}
-          </div>
+        {infoMessage && (
+          <Alert type="info" className="mb-5" onClose={() => setInfoMessage('')}>
+            {infoMessage}
+          </Alert>
         )}
+
+        <Card className="stagger-in">
+          <Card.Header className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-lg font-bold text-slate-900">Identified Fish List</h2>
+            <p className="text-sm text-slate-600">
+              {total > 0
+                ? `Page ${page} of ${totalPages} · ${total} fishes`
+                : 'No identified fishes yet'}
+            </p>
+          </Card.Header>
+          <Card.Body className="p-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Spinner size="lg" />
+              </div>
+            ) : fishes.length === 0 ? (
+              <div className="px-6 py-10">
+                <p className="text-slate-600">No fishes found.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50/85 text-left text-xs uppercase tracking-wide text-slate-500">
+                      <th className="px-6 py-3 font-semibold">Fish</th>
+                      <th className="px-6 py-3 font-semibold">Alias</th>
+                      <th className="px-6 py-3 font-semibold">Sightings</th>
+                      <th className="px-6 py-3 font-semibold">Last Seen</th>
+                      <th className="px-6 py-3 font-semibold">Confidence</th>
+                      <th className="px-6 py-3 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fishes.map((fish) => {
+                      const fishId = fish?.fishId || fish?.fish_id || null
+                      const sightingsCount = fish?.sightingsCount || fish?.sightings_count || 0
+                      const previewPath = fish?.previewPath || fish?.preview_path || ''
+                      const lastIdentifiedAt =
+                        fish?.lastIdentifiedAt || fish?.last_identified_at || null
+                      const lastConfidence = fish?.lastConfidence || fish?.last_confidence
+                      const fishAlias =
+                        fish?.fishAlias || fish?.fish_alias || fish?.fishName || fish?.fish_name || ''
+                      const isEditingRow = editingFishId === fishId
+                      const isSavingRow = savingFishId === fishId
+                      if (!fishId) return null
+
+                      return (
+                        <tr key={fishId} className="border-t border-slate-200/80 text-slate-700">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-11 w-11 overflow-hidden rounded-lg bg-slate-200">
+                                {previewPath ? (
+                                  <img
+                                    src={resolveImageUrl(previewPath)}
+                                    alt={`Fish ${formatFishIdForDisplay(fishId)}`}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : null}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900">
+                                  {fishAlias || `Fish #${formatFishIdForDisplay(fishId)}`}
+                                </p>
+                                <p className="text-xs text-slate-500">{fishId}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {isEditingRow ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={fishAliasDraft}
+                                  onChange={(event) => setFishAliasDraft(event.target.value)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                      event.preventDefault()
+                                      handleSaveFishAlias(fishId)
+                                    }
+                                  }}
+                                  placeholder="Enter fish alias"
+                                  maxLength={80}
+                                  className="h-8 w-44 rounded-md border border-slate-300 px-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="primary"
+                                  disabled={isSavingRow}
+                                  onClick={() => handleSaveFishAlias(fishId)}
+                                >
+                                  {isSavingRow ? 'Saving' : 'Save'}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={isSavingRow}
+                                  onClick={handleCancelEditAlias}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : fishAlias ? (
+                              <p className="font-medium text-slate-900">{fishAlias}</p>
+                            ) : (
+                              <p className="text-slate-400">No alias</p>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 font-semibold">{sightingsCount}</td>
+                          <td className="px-6 py-4">{formatDateLabel(lastIdentifiedAt)}</td>
+                          <td className="px-6 py-4">
+                            {typeof lastConfidence === 'number'
+                              ? `${(lastConfidence * 100).toFixed(1)}%`
+                              : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="inline-flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={isSavingRow}
+                                onClick={() => handleStartEditAlias(fishId, fishAlias)}
+                              >
+                                Edit Alias
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                disabled={isSavingRow}
+                                onClick={() => handleOpenTracking(fishId)}
+                              >
+                                Open Tracking
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
       </div>
     </div>
   )

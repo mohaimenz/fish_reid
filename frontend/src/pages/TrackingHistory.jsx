@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Image, MapIcon, X } from 'lucide-react'
+import { Calendar, Image, Link2, MapIcon, X } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Spinner from '../components/ui/Spinner'
@@ -19,7 +19,7 @@ const TrackingHistory = () => {
     resetWorkflow 
   } = useWorkflowStore()
   
-  const [activeView, setActiveView] = useState('map') // map, timeline, gallery
+  const [activeView, setActiveView] = useState('map') // map, timeline, gallery, pair
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null)
@@ -36,8 +36,16 @@ const TrackingHistory = () => {
   }
 
   const galleryItems = trackingHistory?.images || []
+  const trackedFishAlias =
+    trackingHistory?.fishAlias ||
+    trackingHistory?.fish_alias ||
+    trackingHistory?.fishName ||
+    trackingHistory?.fish_name ||
+    null
   const selectedGalleryImage =
     selectedGalleryIndex === null ? null : galleryItems[selectedGalleryIndex] || null
+  const pairSummary = trackingHistory?.pairSummary || trackingHistory?.pair_summary || []
+  const pairTimeline = trackingHistory?.pairTimeline || trackingHistory?.pair_timeline || []
   const mapSightings = useMemo(() => {
     const rawSightings = Array.isArray(trackingHistory?.sightings) ? trackingHistory.sightings : []
     const normalized = rawSightings
@@ -102,29 +110,31 @@ const TrackingHistory = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="page-shell flex items-center justify-center">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading tracking history...</p>
+          <p className="mt-4 text-slate-600">Loading tracking history...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-start mb-8">
+    <div className="page-shell">
+      <div className="page-container">
+        <div className="page-header">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Tracking History
-            </h1>
-            <p className="text-gray-600">
-              Historical observations of RabbitFish ID: {formatFishIdForDisplay(selectedFishId)}
+            <h1 className="page-title">Tracking History</h1>
+            <p className="page-subtitle">
+              Historical observations for{' '}
+              {trackedFishAlias
+                ? `${trackedFishAlias} (#${formatFishIdForDisplay(selectedFishId)})`
+                : `fish #${formatFishIdForDisplay(selectedFishId)}`}
+              .
             </p>
           </div>
-          <Button onClick={handleNewTracking}>
-            New Tracking
+          <Button onClick={handleNewTracking} variant="outline">
+            Start New Session
           </Button>
         </div>
 
@@ -135,28 +145,55 @@ const TrackingHistory = () => {
         )}
 
         {/* View Selector */}
-        <div className="flex space-x-2 mb-6">
-          <Button
-            variant={activeView === 'map' ? 'primary' : 'outline'}
+        <div className="mb-6 inline-flex rounded-xl border border-slate-200 bg-white/85 p-1 shadow-sm">
+          <button
+            type="button"
             onClick={() => setActiveView('map')}
-            icon={<MapIcon size={16} />}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              activeView === 'map'
+                ? 'bg-primary-100 text-primary-800'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
+            <MapIcon size={16} />
             Map View
-          </Button>
-          <Button
-            variant={activeView === 'timeline' ? 'primary' : 'outline'}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveView('timeline')}
-            icon={<Calendar size={16} />}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              activeView === 'timeline'
+                ? 'bg-primary-100 text-primary-800'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
+            <Calendar size={16} />
             Timeline
-          </Button>
-          <Button
-            variant={activeView === 'gallery' ? 'primary' : 'outline'}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveView('gallery')}
-            icon={<Image size={16} />}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              activeView === 'gallery'
+                ? 'bg-primary-100 text-primary-800'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
           >
+            <Image size={16} />
             Photo Gallery
-          </Button>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView('pair')}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+              activeView === 'pair'
+                ? 'bg-primary-100 text-primary-800'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Link2 size={16} />
+            Pair Tracking
+          </button>
         </div>
 
         {/* Map View */}
@@ -191,15 +228,16 @@ const TrackingHistory = () => {
               <div className="space-y-4">
                 {trackingHistory?.sightings?.length > 0 ? (
                   trackingHistory.sightings.map((sighting, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="flex-shrink-0 w-24 text-sm text-gray-600">
+                    <div key={index} className="flex items-start gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary-500" />
+                      <div className="flex-shrink-0 w-28 text-sm text-slate-600">
                         {sighting.dateTime ? new Date(sighting.dateTime).toLocaleDateString() : 'N/A'}
                       </div>
-                      <div className="flex-1 ml-4 pb-8 border-l-2 border-gray-200 pl-4">
-                        <p className="font-medium text-gray-900">
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900">
                           Location: {sighting.latitude ?? 'N/A'}, {sighting.longitude ?? 'N/A'}
                         </p>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="mt-1 text-sm text-slate-600">
                           Confidence: {typeof sighting.confidence === 'number' ? `${(sighting.confidence * 100).toFixed(1)}%` : 'N/A'}
                         </p>
                       </div>
@@ -261,6 +299,88 @@ const TrackingHistory = () => {
             </Card.Body>
           </Card>
         )}
+
+        {activeView === 'pair' && (
+          <Card>
+            <Card.Header>
+              <h2 className="text-lg font-semibold">Pair Tracking Timeline</h2>
+            </Card.Header>
+            <Card.Body>
+              {pairTimeline.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  No confirmed pair history available.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {pairTimeline.map((entry, index) => {
+                    const pairFishId = entry?.pairFishId || entry?.pair_fish_id
+                    const pairFishAlias = entry?.pairFishAlias || entry?.pair_fish_alias
+                    const dateSeen = entry?.dateSeen || entry?.date_seen
+                    const siteName = entry?.siteName || entry?.site_name
+                    const sessionId = entry?.sessionId || entry?.session_id
+
+                    return (
+                      <div
+                        key={`${pairFishId || 'pair'}-${sessionId || 'session'}-${index}`}
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-3"
+                      >
+                        <p className="font-semibold text-slate-900">
+                          Partner:{' '}
+                          {pairFishId
+                            ? pairFishAlias
+                              ? `${pairFishAlias} (#${formatFishIdForDisplay(pairFishId)})`
+                              : `Fish #${formatFishIdForDisplay(pairFishId)}`
+                            : 'Unknown fish'}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          Date: {dateSeen ? new Date(dateSeen).toLocaleString() : 'Unknown'}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          Site: {siteName || 'Unknown'}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Session: {sessionId || 'Unknown'}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {pairSummary.length > 0 && (
+                <div className="mt-6 border-t border-slate-200 pt-4">
+                  <h3 className="text-sm font-semibold text-slate-900">Partner Summary</h3>
+                  <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {pairSummary.map((item) => {
+                      const pairFishId = item?.pairFishId || item?.pair_fish_id
+                      const pairFishAlias = item?.pairFishAlias || item?.pair_fish_alias
+                      const coSightings = item?.coSightings || item?.co_sightings || 0
+                      const lastSeenAt = item?.lastSeenAt || item?.last_seen_at
+
+                      if (!pairFishId) return null
+                      return (
+                        <div
+                          key={pairFishId}
+                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">
+                            {pairFishAlias || `Fish #${formatFishIdForDisplay(pairFishId)}`}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-600">
+                            {coSightings} confirmed pair sightings
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Last seen: {lastSeenAt ? new Date(lastSeenAt).toLocaleString() : 'Unknown'}
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        )}
       </div>
 
       {selectedGalleryImage && (
@@ -269,7 +389,9 @@ const TrackingHistory = () => {
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  Fish ID: {formatFishIdForDisplay(selectedFishId)}
+                  {trackedFishAlias
+                    ? `${trackedFishAlias} (#${formatFishIdForDisplay(selectedFishId)})`
+                    : `Fish ID: ${formatFishIdForDisplay(selectedFishId)}`}
                 </p>
                 <p className="text-xs text-gray-600">
                   {selectedGalleryImage.dateTime ? new Date(selectedGalleryImage.dateTime).toLocaleString() : 'Unknown date'}

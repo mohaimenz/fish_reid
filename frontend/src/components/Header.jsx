@@ -1,8 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Fish, FolderOpen, LogOut, Shield, User } from 'lucide-react'
 import useAuthStore from '../store/authStore'
 import authService from '../services/authService'
 import Button from './ui/Button'
+
+const navItemClass = ({ isActive }) =>
+  `inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors ${
+    isActive ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+  }`
 
 const Header = () => {
   const { isAuthenticated, user, clearAuth } = useAuthStore()
@@ -21,24 +26,24 @@ const Header = () => {
   }
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">🐟</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-700 text-white shadow-sm">
+              <Fish size={18} />
             </div>
-            <span className="text-xl font-bold text-gray-900">RabbitFish Tracker</span>
+            <span className="text-lg font-bold text-slate-900">RabbitFish Tracker</span>
           </Link>
 
           {/* Navigation */}
           <nav className="flex items-center space-x-4">
             {!isAuthenticated ? (
               <>
-                <Link to="/how-it-works" className="text-gray-600 hover:text-gray-900">
+                <NavLink to="/how-it-works" className={navItemClass}>
                   How It Works
-                </Link>
+                </NavLink>
                 <Button variant="outline" to="/login">
                   Login
                 </Button>
@@ -48,31 +53,31 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link
+                <NavLink
                   to="/sessions"
-                  className="flex items-center space-x-1 text-gray-600 hover:text-primary-600"
+                  className={navItemClass}
                 >
                   <FolderOpen size={18} />
                   <span>Sessions</span>
-                </Link>
-                <Link
+                </NavLink>
+                <NavLink
                   to="/fishes"
-                  className="flex items-center space-x-1 text-gray-600 hover:text-primary-600"
+                  className={navItemClass}
                 >
                   <Fish size={18} />
                   <span>Fishes</span>
-                </Link>
+                </NavLink>
                 {user?.role === 'admin' && (
-                  <Link
+                  <NavLink
                     to="/admin"
-                    className="flex items-center space-x-1 text-gray-600 hover:text-primary-600"
+                    className={navItemClass}
                   >
                     <Shield size={18} />
                     <span>Admin</span>
-                  </Link>
+                  </NavLink>
                 )}
-                <div className="flex items-center space-x-2 text-gray-700">
-                  <User size={18} />
+                <div className="hidden items-center space-x-2 text-slate-700 md:flex">
+                  <User size={17} />
                   <span className="text-sm">{user?.email || user?.name}</span>
                 </div>
                 <Button

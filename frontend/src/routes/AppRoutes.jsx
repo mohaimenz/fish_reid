@@ -15,6 +15,7 @@ import Register from '../pages/Register'
 import PhotoUpload from '../pages/PhotoUpload'
 import Detection from '../pages/Detection'
 import Identification from '../pages/Identification'
+import PairMatching from '../pages/PairMatching'
 import TrackingHistory from '../pages/TrackingHistory'
 import SessionManager from '../pages/SessionManager'
 import FishManager from '../pages/FishManager'
@@ -68,6 +69,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <TrackingHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="pair-matching"
+          element={
+            <ProtectedRoute>
+              <PairMatching />
             </ProtectedRoute>
           }
         />

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Lock, Mail, UserRound, UserRoundPlus } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
@@ -92,10 +93,10 @@ const Register = () => {
   }
 
   return (
-    <Card>
+    <Card className="stagger-in">
       <Card.Header>
-        <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
-        <p className="text-sm text-gray-600 mt-1">Join RabbitFish Tracker</p>
+        <h2 className="text-2xl font-bold text-slate-900">Create Account</h2>
+        <p className="mt-1 text-sm text-slate-600">Set up your workspace for fish identification and tracking.</p>
       </Card.Header>
       
       <Card.Body>
@@ -113,8 +114,10 @@ const Register = () => {
             value={formData.name}
             onChange={handleChange}
             error={errors.name}
+            icon={<UserRound size={16} />}
             required
             autoComplete="name"
+            placeholder="Dr. Jane Doe"
           />
           
           <Input
@@ -124,8 +127,10 @@ const Register = () => {
             value={formData.email}
             onChange={handleChange}
             error={errors.email}
+            icon={<Mail size={16} />}
             required
             autoComplete="email"
+            placeholder="name@organization.org"
           />
           
           <Input
@@ -135,8 +140,10 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             error={errors.password}
+            icon={<Lock size={16} />}
             required
             autoComplete="new-password"
+            placeholder="At least 8 characters"
           />
           
           <Input
@@ -146,14 +153,17 @@ const Register = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             error={errors.confirmPassword}
+            icon={<Lock size={16} />}
             required
             autoComplete="new-password"
+            placeholder="Repeat your password"
           />
           
           <Button
             type="submit"
             className="w-full"
             disabled={isSubmitting}
+            icon={<UserRoundPlus size={16} />}
           >
             {isSubmitting ? 'Creating account...' : 'Register'}
           </Button>
@@ -161,9 +171,9 @@ const Register = () => {
       </Card.Body>
       
       <Card.Footer>
-        <p className="text-sm text-center text-gray-600">
+        <p className="text-center text-sm text-slate-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link to="/login" className="font-semibold text-primary-700 hover:text-primary-800">
             Login
           </Link>
         </p>

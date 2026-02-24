@@ -1,14 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-base: #f4f6f8;
+  --bg-elevated: #ffffff;
+  --bg-soft: #f8fafc;
+  --text-primary: #10243c;
+  --text-muted: #4f6178;
+  --border-subtle: #dce4ec;
+  --brand-50: #e8f6ff;
+  --brand-100: #cceafe;
+  --brand-500: #1687da;
+  --brand-600: #0d6cb2;
+  --brand-700: #0c578e;
+  --accent-coral: #f06449;
+  --shadow-soft: 0 6px 18px rgba(16, 36, 60, 0.08);
+  --shadow-card: 0 10px 26px rgba(12, 42, 74, 0.09);
+}
+
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    font-family: 'Manrope', sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-base);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.01em;
+    color: #0f2a47;
+  }
+
+  p,
+  span,
+  label,
+  li,
+  td,
+  th,
+  input,
+  button,
+  textarea {
+    font-family: 'Manrope', sans-serif;
   }
 }
 
 .tracking-direction-arrow {
   background: transparent;
   border: none;
+}
+
+.page-shell {
+  @apply min-h-screen p-4 sm:p-6 lg:p-8;
+}
+
+.page-container {
+  @apply mx-auto w-full max-w-7xl;
+}
+
+.workflow-layout {
+  @apply grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)];
+}
+
+.workflow-rail {
+  @apply w-full lg:sticky lg:top-24 lg:self-start;
+}
+
+.workflow-main {
+  @apply min-w-0;
+}
+
+.page-header {
+  @apply mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between;
+}
+
+.page-title {
+  @apply text-3xl font-bold;
+}
+
+.page-subtitle {
+  color: var(--text-muted);
+  @apply mt-1 text-sm md:text-base;
+}
+
+.panel-muted {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
+}
+
+.soft-divider {
+  border-color: var(--border-subtle);
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-in {
+  animation: riseIn 380ms ease-out both;
 }

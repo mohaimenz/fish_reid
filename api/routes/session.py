@@ -166,7 +166,7 @@ async def CompleteSession(session_id: str, auth_data: dict = Depends(Auth().veri
     updated = store.update_session(
         user_id=user_id,
         session_id=session_id,
-        current_step="identification",
+        current_step="pair_matching",
         status="completed",
     )
     if not updated:
@@ -204,6 +204,7 @@ async def DeleteSession(session_id: str, auth_data: dict = Depends(Auth().verify
         uploads_collection = db.get_collection("user_uploads")
         annotations_collection = db.get_collection("annotations")
         identification_logs_collection = db.get_collection("identification_logs")
+        pair_logs_collection = db.get_collection("fish_pair_logs")
         query_embeddings_collection = db.get_collection("query_embeddings")
         embeddings_collection = db.get_collection("fish_embeddings")
         fish_collection = db.get_collection("fish")
@@ -316,6 +317,9 @@ async def DeleteSession(session_id: str, auth_data: dict = Depends(Auth().verify
                 removed_crop_files += 1
 
         deleted_logs = identification_logs_collection.delete_many(log_query).deleted_count
+        deleted_pair_logs = pair_logs_collection.delete_many(
+            {"user_id": user_id, "session_id": session_id}
+        ).deleted_count
         deleted_query_embeddings = query_embeddings_collection.delete_many(query_embedding_query).deleted_count
         deleted_embeddings = embeddings_collection.delete_many(embedding_query).deleted_count
         deleted_annotations = annotations_collection.delete_many(annotation_query).deleted_count
@@ -329,7 +333,13 @@ async def DeleteSession(session_id: str, auth_data: dict = Depends(Auth().verify
                 continue
             remaining_logs = identification_logs_collection.count_documents({"fish_id": fish_id})
             remaining_embeddings = embeddings_collection.count_documents({"fish_id": fish_id, "user_id": user_id})
-            if remaining_logs == 0 and remaining_embeddings == 0:
+            remaining_pair_logs = pair_logs_collection.count_documents(
+                {
+                    "user_id": user_id,
+                    "$or": [{"fish_id_a": fish_id}, {"fish_id_b": fish_id}],
+                }
+            )
+            if remaining_logs == 0 and remaining_embeddings == 0 and remaining_pair_logs == 0:
                 fish_delete_result = fish_collection.delete_one({"_id": fish_oid, "user_id": user_id})
                 deleted_fish += fish_delete_result.deleted_count
 
@@ -344,6 +354,7 @@ async def DeleteSession(session_id: str, auth_data: dict = Depends(Auth().verify
                 "user_uploads": deleted_uploads,
                 "annotations": deleted_annotations,
                 "identification_logs": deleted_logs,
+                "fish_pair_logs": deleted_pair_logs,
                 "query_embeddings": deleted_query_embeddings,
                 "fish_embeddings": deleted_embeddings,
                 "fish": deleted_fish,

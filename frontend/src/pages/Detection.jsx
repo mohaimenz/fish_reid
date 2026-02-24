@@ -518,12 +518,14 @@ const Detection = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <WorkflowStepper currentStep={2} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Spinner size="lg" />
-            <p className="mt-4 text-gray-600">Running RabbitFish detection...</p>
+      <div className="page-shell">
+        <div className="page-container workflow-layout">
+          <WorkflowStepper currentStep={2} />
+          <div className="workflow-main flex min-h-[320px] items-center justify-center">
+            <div className="text-center">
+              <Spinner size="lg" />
+              <p className="mt-4 text-gray-600">Running RabbitFish detection...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -534,22 +536,21 @@ const Detection = () => {
   const uniqueImagePaths = getUniqueImagePaths()
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <WorkflowStepper currentStep={2} />
-      
-      <div className="flex-1 p-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">RabbitFish Detection</h1>
-          <p className="text-gray-600 mb-8">
+    <div className="page-shell">
+      <div className="page-container workflow-layout">
+        <WorkflowStepper currentStep={2} />
+        <div className="workflow-main">
+          <div className="w-full">
+          <h1 className="page-title mb-2">RabbitFish Detection</h1>
+          <p className="page-subtitle mb-8">
             Review and verify detected RabbitFish instances
           </p>
 
           <div className="mb-6">
             <Button
-              variant="outline"
+              variant="danger"
               onClick={handleRunDetectionAgain}
               disabled={isLoading || !(routeSessionId || currentSessionId)}
-              className="border-red-500 text-red-600 hover:bg-red-50"
             >
               Run Detection Again
             </Button>
@@ -610,7 +611,7 @@ const Detection = () => {
                       }}
                       disabled={tempAnnotation !== null || !getCurrentImageResult()}
                     >
-                      {isDrawingMode ? '🎨 Drawing Mode ON' : '➕ Draw Annotation'}
+                      {isDrawingMode ? 'Drawing Mode Enabled' : 'Draw Annotation'}
                     </Button>
                     {isDrawingMode && (
                       <span className="ml-3 text-sm text-gray-600">
@@ -625,7 +626,7 @@ const Detection = () => {
                     {getCurrentImageResult() && (
                       <button
                         onClick={handleDeleteImage}
-                        className="absolute -top-3 -right-3 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 shadow-lg transition-colors"
+                        className="absolute -top-3 -right-3 z-10 rounded-full border border-red-300 bg-white p-2 text-red-700 shadow-sm transition-colors hover:bg-red-50"
                         title="Delete this image and all its annotations"
                       >
                         <Trash2 size={20} />
@@ -645,7 +646,7 @@ const Detection = () => {
                           <button
                             key={index}
                             onClick={() => handleDeleteDetection(box.originalIndex)}
-                            className="absolute bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-lg transition-colors"
+                            className="absolute rounded-full border border-red-300 bg-white p-1 text-red-700 shadow-sm transition-colors hover:bg-red-50"
                             style={{
                               left: `${box.x + box.width - 12}px`,
                               top: `${box.y - 12}px`,
@@ -662,16 +663,14 @@ const Detection = () => {
                             <Button
                               variant="primary"
                               onClick={handleSaveAnnotation}
-                              className="bg-green-600 hover:bg-green-700"
                             >
-                              ✓ Save Annotation
+                              Save Annotation
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="danger"
                               onClick={() => setTempAnnotation(null)}
-                              className="bg-red-600 hover:bg-red-700 text-white border-red-600"
                             >
-                              ✕ Cancel
+                              Cancel
                             </Button>
                           </div>
                         )}
@@ -712,6 +711,7 @@ const Detection = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

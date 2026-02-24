@@ -236,7 +236,12 @@ const PhotoUpload = () => {
       return
     }
 
-    if (session.current_step === 'identification' || session.current_step === 'tracking' || session.status === 'completed') {
+    if (session.current_step === 'pair_matching' || session.current_step === 'tracking' || session.status === 'completed') {
+      navigate('/pair-matching')
+      return
+    }
+
+    if (session.current_step === 'identification') {
       navigate('/identification')
       return
     }
@@ -276,13 +281,13 @@ const PhotoUpload = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <WorkflowStepper currentStep={1} />
-      
-      <div className="flex-1 p-8">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Photo Upload</h1>
-          <p className="text-gray-600 mb-8">
+    <div className="page-shell">
+      <div className="page-container workflow-layout">
+        <WorkflowStepper currentStep={1} />
+        <div className="workflow-main">
+          <div className="w-full">
+          <h1 className="page-title mb-2">Photo Upload</h1>
+          <p className="page-subtitle mb-8">
             Upload underwater images and provide location metadata
           </p>
 
@@ -304,7 +309,6 @@ const PhotoUpload = () => {
                     size="sm"
                     onClick={handleCreateSession}
                     disabled={isCreatingSession}
-                    className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isCreatingSession ? 'Creating...' : 'Create New Session'}
                   </Button>
@@ -347,22 +351,20 @@ const PhotoUpload = () => {
                             Use for Upload
                           </Button>
                           <Button
-                            variant="primary"
+                            variant="secondary"
                             size="sm"
                             onClick={() => handleResumeSession(session)}
                             disabled={isSubmitting}
-                            className="bg-blue-600 hover:bg-blue-700"
                             icon={<PlayCircle size={14} />}
                           >
                             Resume
                           </Button>
                           {session.status === 'in_progress' && (session.stats?.unfinished_count || 0) > 0 && (
                             <Button
-                              variant="outline"
+                              variant="danger"
                               size="sm"
                               onClick={() => handleDiscardSession(session.id)}
                               disabled={isSubmitting}
-                              className="border-red-500 text-red-600 hover:bg-red-50"
                             >
                               Discard
                             </Button>
@@ -422,7 +424,7 @@ const PhotoUpload = () => {
                           />
                           <button
                             onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 rounded-full border border-red-300 bg-white p-1 text-red-700 opacity-0 transition-opacity group-hover:opacity-100"
                           >
                             <X size={16} />
                           </button>
@@ -454,7 +456,7 @@ const PhotoUpload = () => {
                       onClick={() => setIsAddSiteOpen(true)}
                       icon={<Plus size={16} />}
                     >
-                    Site
+                    Add Site
                     </Button>
                   </div>
 
@@ -519,6 +521,7 @@ const PhotoUpload = () => {
             </Button>
           </div>
         </div>
+      </div>
       </div>
       {isAddSiteOpen && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 px-4">

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Lock, LogIn, Mail } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
@@ -86,10 +87,10 @@ const Login = () => {
   }
 
   return (
-    <Card>
+    <Card className="stagger-in">
       <Card.Header>
-        <h2 className="text-2xl font-bold text-gray-900">Login</h2>
-        <p className="text-sm text-gray-600 mt-1">Welcome back to RabbitFish Tracker</p>
+        <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
+        <p className="mt-1 text-sm text-slate-600">Sign in to continue your fish tracking workflow.</p>
       </Card.Header>
       
       <Card.Body>
@@ -107,8 +108,10 @@ const Login = () => {
             value={formData.email}
             onChange={handleChange}
             error={errors.email}
+            icon={<Mail size={16} />}
             required
             autoComplete="email"
+            placeholder="name@organization.org"
           />
           
           <Input
@@ -118,14 +121,17 @@ const Login = () => {
             value={formData.password}
             onChange={handleChange}
             error={errors.password}
+            icon={<Lock size={16} />}
             required
             autoComplete="current-password"
+            placeholder="Enter your password"
           />
           
           <Button
             type="submit"
             className="w-full"
             disabled={isSubmitting}
+            icon={<LogIn size={16} />}
           >
             {isSubmitting ? 'Logging in...' : 'Login'}
           </Button>
@@ -133,9 +139,9 @@ const Login = () => {
       </Card.Body>
       
       <Card.Footer>
-        <p className="text-sm text-center text-gray-600">
+        <p className="text-center text-sm text-slate-600">
           Don't have an account?{' '}
-          <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link to="/register" className="font-semibold text-primary-700 hover:text-primary-800">
             Create account
           </Link>
         </p>
