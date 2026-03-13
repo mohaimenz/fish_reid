@@ -1,37 +1,46 @@
-# RabbitFish Tracker - Frontend
+# RabbitFish Tracking Platform Frontend
 
-A React-based web application for ML-powered RabbitFish detection, identification, and tracking.
+This frontend is the operator-facing web app for the RabbitFish workflow. It is built with React and Vite and is responsible for authentication, session management, photo upload, review of detections, identity assignment, pair matching, and tracking views.
 
-## Features
+## What The App Covers
 
-- 🔐 **JWT Authentication** - Secure user registration and login
-- 📷 **Photo Upload** - Multi-image upload with location metadata
-- 🤖 **ML Detection** - Automated RabbitFish detection with bounding boxes
-- 🐟 **Fish Re-Identification** - Visual similarity matching
-- 🗺️ **Tracking History** - Spatiotemporal visualization of sightings
-- 👨‍💼 **Admin Dashboard** - Role-based access control
+The current route structure in [`src/routes/AppRoutes.jsx`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/routes/AppRoutes.jsx) exposes these main areas:
 
-## Tech Stack
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing page and project overview |
+| `/how-it-works` | Plain-language explanation of the workflow |
+| `/login` | User sign-in |
+| `/register` | User registration |
+| `/upload` | Create or resume a survey session and upload images |
+| `/detection` | Review, edit, and save detections |
+| `/identification` | Review match suggestions and assign identities |
+| `/pair-matching` | Record pair relationships for a session |
+| `/tracking` | Explore fish history through map, gallery, and timeline views |
+| `/sessions` | Browse survey sessions |
+| `/fishes` | Browse identified fish records |
+| `/admin` | Admin-only dashboard |
 
-- **Framework:** React 18
-- **Routing:** React Router v6
-- **State Management:** Zustand
-- **HTTP Client:** Axios
-- **Styling:** TailwindCSS
-- **Maps:** Leaflet + OpenStreetMap
-- **Icons:** Lucide React
-- **Build Tool:** Vite
+## Stack
 
-## Getting Started
+- React 18
+- Vite
+- React Router
+- Zustand
+- Axios
+- Tailwind CSS
+- Leaflet / React Leaflet
+- Lucide icons
 
-### Prerequisites
+## Prerequisites
 
-- Node.js 18+ and npm/yarn
-- Backend API running (see API configuration below)
+- Node.js 18+
+- npm
+- The FastAPI backend running locally
 
-### Installation
+## Local Setup
 
-1. Navigate to the frontend directory:
+1. Move into the frontend folder:
 
 ```bash
 cd frontend
@@ -43,122 +52,83 @@ cd frontend
 npm install
 ```
 
-3. Create environment file:
+3. Create a local environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Update `.env` with your API configuration:
+4. Confirm the API values match the current backend:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:8000
+
+VITE_AUTH_REGISTER_ENDPOINT=/user/register
+VITE_AUTH_LOGIN_ENDPOINT=/user/login
+
+VITE_UPLOAD_ENDPOINT=/photo/upload
+VITE_DETECT_ENDPOINT=/detector/detect
+VITE_IDENTIFY_ENDPOINT=/identify
+VITE_TRACKING_ENDPOINT=/tracking
+
+VITE_RESUME_DETECTION_ENDPOINT=/detector/resume-detection
+VITE_CHECK_UNFINISHED_ENDPOINT=/detector/check-unfinished
+VITE_DISCARD_PREV_UNFINISHED_ENDPOINT=/detector/discard-previous-unfinished
+VITE_DELETE_BBOX_ENDPOINT=/detector/delete-bbox
+VITE_SAVE_MANUAL_ANNOTATION_ENDPOINT=/detector/save-manual-annotation
+VITE_DELETE_IMAGE_ENDPOINT=/detector/delete-image
+
+VITE_SITES_ENDPOINT=/site/sites
+VITE_CREATE_SITE_ENDPOINT=/site/site
+
+VITE_SESSION_CREATE_ENDPOINT=/session/create
+VITE_SESSION_HISTORY_ENDPOINT=/session/history
+VITE_SESSION_DETAIL_ENDPOINT=/session
 ```
 
-5. Start the development server:
+5. Start the dev server:
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+The app runs on `http://localhost:3000` based on [`vite.config.js`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/vite.config.js).
 
-## Project Structure
+## Scripts
 
-```
-frontend/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── layouts/        # Layout components
-│   │   ├── ui/             # Base UI components (Button, Input, Card, etc.)
-│   │   ├── Header.jsx      # Application header
-│   │   └── WorkflowStepper.jsx
-│   ├── pages/              # Page components
-│   │   ├── LandingPage.jsx
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── PhotoUpload.jsx
-│   │   ├── Detection.jsx
-│   │   ├── Identification.jsx
-│   │   ├── TrackingHistory.jsx
-│   │   └── AdminDashboard.jsx
-│   ├── routes/             # Route configuration
-│   │   ├── AppRoutes.jsx
-│   │   └── ProtectedRoute.jsx
-│   ├── services/           # API services
-│   │   ├── apiClient.js
-│   │   ├── authService.js
-│   │   └── workflowService.js
-│   ├── store/              # Zustand stores
-│   │   ├── authStore.js
-│   │   └── workflowStore.js
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── index.html
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-└── .env.example
-```
+- `npm run dev` starts the local dev server
+- `npm run build` creates a production build
+- `npm run preview` serves the production build locally
+- `npm run lint` runs ESLint
 
-## Available Scripts
+## Important Integration Notes
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+- The backend does not currently use a `/api` prefix. The frontend should point directly at `http://localhost:8000`.
+- The backend currently exposes `POST /user/register` and `POST /user/login`. It does not expose `GET /auth/me` or `POST /auth/logout`.
+- Logout in the frontend is effectively local token clearing. If the backend later adds a logout endpoint, the frontend service can be aligned with it.
+- Several service defaults in the code still assume older endpoint names. The environment variables above are the safest way to run the current frontend against the current backend.
 
-## API Configuration
+## Workflow Summary
 
-The application expects the following backend endpoints:
+1. A user signs in or creates an account.
+2. They create a new session or resume an existing one.
+3. They upload one or more images and optionally link them to a saved site.
+4. Detection produces bounding boxes that can be reviewed, deleted, or supplemented manually.
+5. Identification suggests existing fish matches or allows creation of a new identity.
+6. The user can then inspect tracking history and record pair relationships.
 
-| Method | Endpoint            | Purpose           |
-| ------ | ------------------- | ----------------- |
-| POST   | /auth/register      | Register new user |
-| POST   | /auth/login         | Authenticate user |
-| POST   | /auth/logout        | Logout            |
-| GET    | /auth/me            | Get user info     |
-| POST   | /upload             | Upload images     |
-| POST   | /detect             | Run detection     |
-| POST   | /identify           | Re-identification |
-| GET    | /tracking/{fish_id} | Tracking history  |
+## Key Folders
 
-Update the endpoint paths in `.env` if your backend uses different routes.
+| Path | Purpose |
+| --- | --- |
+| [`src/pages`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/pages) | Page-level screens |
+| [`src/components`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/components) | Shared UI and layouts |
+| [`src/services`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/services) | API clients and workflow calls |
+| [`src/store`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/store) | Zustand state stores |
+| [`src/routes`](/Users/aasa0007/Python/RabbitFish/fish_reid/frontend/src/routes) | Routing and access control |
 
-## User Workflow
+## Known Gaps
 
-1. **Landing Page** → Register/Login
-2. **Photo Upload** → Upload images + location metadata
-3. **Detection** → Review ML-detected RabbitFish
-4. **Identification** → Match with existing fish
-5. **Tracking History** → Visualize historical sightings
-
-## Authentication
-
-JWT tokens are stored in `localStorage` and automatically attached to API requests. Sessions expire based on backend configuration, redirecting users to login.
-
-## Customization
-
-### Styling
-
-Modify TailwindCSS configuration in `tailwind.config.js` to customize colors, spacing, etc.
-
-### API Endpoints
-
-Update `.env` file with your backend API URLs.
-
-### Components
-
-All UI components are in `src/components/ui/` and can be customized or extended.
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-
-## License
-
-MIT
+- The frontend still carries some legacy endpoint defaults that do not match the current API layout.
+- The auth service assumes endpoints for `logout` and `me` that are not implemented in the backend yet.
+- Runtime behaviour depends on the backend being started from the `api/` directory so that relative upload paths resolve correctly.
