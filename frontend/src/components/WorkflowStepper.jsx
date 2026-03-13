@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import useWorkflowStore from '../store/workflowStore'
 
 const steps = [
-  { id: 1, name: 'Photo Upload', path: '/upload' },
-  { id: 2, name: 'Detection', path: '/detection' },
-  { id: 3, name: 'Identification', path: '/identification' },
-  { id: 4, name: 'Pair Matching', path: '/pair-matching' },
+  { id: 1, name: 'Survey Setup', path: '/upload' },
+  { id: 2, name: 'Detection Review', path: '/detection' },
+  { id: 3, name: 'Identity Review', path: '/identification' },
+  { id: 4, name: 'Pair Review', path: '/pair-matching' },
 ]
 
 const WorkflowStepper = ({ currentStep = 1 }) => {
@@ -32,13 +32,13 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
 
   return (
     <aside className="workflow-rail">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_14px_rgba(15,23,42,0.05)]">
-        <h2 className="mb-1 text-lg font-bold text-slate-900">Workflow</h2>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Upload to Pair Matching
+      <div className="rounded-xl border border-primary-100 bg-white/96 p-4 shadow-[0_10px_24px_rgba(20,105,117,0.08)]">
+        <h2 className="mb-1 text-lg font-bold text-slate-900">Research Flow</h2>
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary-700/75">
+          From survey setup to pair review
         </p>
         <nav className="relative mt-4 space-y-2">
-          <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px bg-slate-200" />
+          <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px bg-primary-100" />
           {steps.map((step) => {
             const isCompleted = step.id < currentStep
             const isCurrent = step.id === currentStep
@@ -53,9 +53,9 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
                 disabled={!isClickable}
                 className={`
                   relative flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors
-                  ${isCurrent ? 'border-primary-300 bg-primary-50' : ''}
-                  ${isCompleted ? 'border-emerald-200 bg-emerald-50' : ''}
-                  ${isUpcoming ? 'border-slate-200 bg-slate-50/80' : ''}
+                  ${isCurrent ? 'border-primary-300 bg-primary-50/95' : ''}
+                  ${isCompleted ? 'border-[#c7ecd9] bg-[#edf9f3]' : ''}
+                  ${isUpcoming ? 'border-[#dbeceb] bg-[#f7fcfb]' : ''}
                   ${isClickable ? 'hover:border-primary-200 hover:bg-primary-50/70' : 'cursor-not-allowed opacity-70'}
                 `}
               >
@@ -63,8 +63,8 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
                   className={`
                     relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold
                     ${isCurrent ? 'bg-primary-600 text-white' : ''}
-                    ${isCompleted ? 'bg-emerald-600 text-white' : ''}
-                    ${isUpcoming ? 'bg-slate-300 text-slate-700' : ''}
+                    ${isCompleted ? 'bg-[#3ba57d] text-white' : ''}
+                    ${isUpcoming ? 'bg-[#dcebea] text-[#4b6872]' : ''}
                   `}
                 >
                   {isCompleted ? (
@@ -78,14 +78,14 @@ const WorkflowStepper = ({ currentStep = 1 }) => {
                     className={`
                       text-sm font-semibold
                       ${isCurrent ? 'text-primary-900' : ''}
-                      ${isCompleted ? 'text-emerald-900' : ''}
+                      ${isCompleted ? 'text-[#256b53]' : ''}
                       ${isUpcoming ? 'text-slate-600' : ''}
                     `}
                   >
                     {step.name}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {isCompleted ? 'Completed' : isCurrent ? 'Current step' : 'Upcoming'}
+                    {isCompleted ? 'Done' : isCurrent ? 'You are here' : 'Coming up'}
                   </p>
                 </div>
               </button>

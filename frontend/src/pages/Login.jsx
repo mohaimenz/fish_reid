@@ -87,10 +87,10 @@ const Login = () => {
   }
 
   return (
-    <Card className="stagger-in">
+    <Card className="stagger-in rounded-[20px] border-slate-200 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
       <Card.Header>
-        <h2 className="text-2xl font-bold text-slate-900">Welcome Back</h2>
-        <p className="mt-1 text-sm text-slate-600">Sign in to continue your fish tracking workflow.</p>
+        <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
+        <p className="mt-1 text-sm text-slate-600">Sign in to return to your survey work and reviewed fish records.</p>
       </Card.Header>
       
       <Card.Body>
@@ -133,16 +133,16 @@ const Login = () => {
             disabled={isSubmitting}
             icon={<LogIn size={16} />}
           >
-            {isSubmitting ? 'Logging in...' : 'Login'}
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
       </Card.Body>
       
       <Card.Footer>
         <p className="text-center text-sm text-slate-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="font-semibold text-primary-700 hover:text-primary-800">
-            Create account
+          Need access?{' '}
+          <Link to="/register" className="font-semibold text-primary-700 hover:text-primary-500">
+            Request an account
           </Link>
         </p>
       </Card.Footer>

@@ -9,14 +9,14 @@ const Alert = ({
 }) => {
   const types = {
     info: {
-      bg: 'bg-blue-50/90',
-      border: 'border-blue-200/90',
-      text: 'text-blue-900',
+      bg: 'bg-blue-100/90',
+      border: 'border-blue-500/60',
+      text: 'text-blue-700',
       icon: <Info className="w-5 h-5 text-blue-600" />,
     },
     success: {
-      bg: 'bg-emerald-50/90',
-      border: 'border-emerald-200/90',
+      bg: 'bg-green-100/90',
+      border: 'border-green-500/60',
       text: 'text-emerald-900',
       icon: <CheckCircle className="w-5 h-5 text-green-600" />,
     },

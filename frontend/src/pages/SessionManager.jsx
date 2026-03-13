@@ -28,7 +28,7 @@ const SessionManager = () => {
       const response = await workflowService.getSessionHistory()
       setSessionHistory(response?.sessions || [])
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load sessions.')
+      setError(err.response?.data?.message || 'Could not load the surveys.')
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +63,7 @@ const SessionManager = () => {
 
   const handleDeleteSession = async (sessionId) => {
     const shouldDelete = window.confirm(
-      'Delete this session and all related uploads/annotations/identification data? This cannot be undone.'
+      'Delete this survey and all related photos, annotations, and identity decisions? This cannot be undone.'
     )
     if (!shouldDelete) return
 
@@ -76,7 +76,7 @@ const SessionManager = () => {
       }
       await loadSessions()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete session.')
+      setError(err.response?.data?.message || 'Could not delete the survey.')
     } finally {
       setIsDeleting(false)
     }
@@ -87,9 +87,9 @@ const SessionManager = () => {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Manage Sessions</h1>
+            <h1 className="page-title">Manage Surveys</h1>
             <p className="page-subtitle">
-              Open or delete workflow sessions. Deleting a session removes all associated data.
+              Open an existing survey or remove one that should no longer be kept.
             </p>
           </div>
           <Button
@@ -113,28 +113,28 @@ const SessionManager = () => {
             <Spinner size="lg" />
           </div>
         ) : sessionHistory.length === 0 ? (
-          <Card>
+          <Card className="border-primary-100 bg-primary-50/40">
             <Card.Body>
-              <p className="text-gray-600">No sessions found yet.</p>
+              <p className="text-slate-700">No surveys found yet.</p>
             </Card.Body>
           </Card>
         ) : (
           <div className="space-y-3">
             {sessionHistory.map((session) => (
-              <Card key={session.id} className="stagger-in">
+              <Card key={session.id} className="stagger-in border-primary-100 bg-white/96 shadow-[0_10px_22px_rgba(20,105,117,0.06)]">
                 <Card.Body>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-semibold text-slate-900">
-                        {session.name || `Session ${session.id.slice(-6)}`}
+                        {session.name || `Survey ${session.id.slice(-6)}`}
                       </p>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Status: {session.status} | Step: {session.current_step}
+                      <p className="mt-1 text-sm text-slate-600">
+                        Status: {session.status} | Stage: {session.current_step}
                       </p>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Uploads: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Identified: {session.stats?.identified_count || 0}
+                      <p className="mt-1 text-sm text-slate-600">
+                        Photos: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Confirmed IDs: {session.stats?.identified_count || 0}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">Session ID: {session.id}</p>
+                      <p className="mt-1 text-xs text-slate-500">Survey ID: {session.id}</p>
                     </div>
 
                     <div className="flex gap-2">
@@ -144,7 +144,7 @@ const SessionManager = () => {
                         disabled={isDeleting}
                         icon={<FolderOpen size={16} />}
                       >
-                        Open
+                        Open Survey
                       </Button>
                       <Button
                         variant="danger"

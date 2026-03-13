@@ -1,24 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-base: #f4f6f8;
-  --bg-elevated: #ffffff;
-  --bg-soft: #f8fafc;
-  --text-primary: #10243c;
-  --text-muted: #4f6178;
-  --border-subtle: #dce4ec;
-  --brand-50: #e8f6ff;
-  --brand-100: #cceafe;
-  --brand-500: #1687da;
-  --brand-600: #0d6cb2;
-  --brand-700: #0c578e;
-  --accent-coral: #f06449;
-  --shadow-soft: 0 6px 18px rgba(16, 36, 60, 0.08);
-  --shadow-card: 0 10px 26px rgba(12, 42, 74, 0.09);
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --border-default: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --brand-primary-dark: #0b2545;
+  --brand-primary: #134074;
+  --brand-action: #2f6fed;
+  --brand-action-light: #eaf3ff;
+  --accent-teal-dark: #0f766e;
+  --accent-teal: #14b8a6;
+  --accent-teal-light: #ddf8f4;
+  --accent-coral: #f25f5c;
+  --accent-coral-light: #ffe5e3;
+  --success: #22c55e;
+  --success-bg: #dcfce7;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --error: #ef4444;
+  --error-bg: #fee2e2;
+  --info: #3b82f6;
+  --info-bg: #dbeafe;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 14px 32px rgba(15, 23, 42, 0.1);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 }
 
 @layer base {
@@ -27,9 +47,9 @@
   }
 
   body {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     color: var(--text-primary);
-    background-color: var(--bg-base);
+    background: var(--bg-page);
     min-height: 100vh;
   }
 
@@ -37,9 +57,9 @@
   h2,
   h3,
   h4 {
-    font-family: 'Space Grotesk', sans-serif;
-    letter-spacing: -0.01em;
-    color: #0f2a47;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
   }
 
   p,
@@ -51,13 +71,30 @@
   input,
   button,
   textarea {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
+  }
+
+  code,
+  pre,
+  .mono-text {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
 .tracking-direction-arrow {
   background: transparent;
   border: none;
+}
+
+.leaflet-container {
+  z-index: 0;
+}
+
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+  z-index: 10;
 }
 
 .page-shell {
@@ -85,21 +122,61 @@
 }
 
 .page-title {
-  @apply text-3xl font-bold;
+  @apply text-[32px] leading-10 font-bold;
 }
 
 .page-subtitle {
-  color: var(--text-muted);
-  @apply mt-1 text-sm md:text-base;
+  color: var(--text-secondary);
+  @apply mt-1 text-base leading-[26px];
 }
 
 .panel-muted {
-  background: var(--bg-soft);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-default);
 }
 
 .soft-divider {
-  border-color: var(--border-subtle);
+  border-color: var(--border-default);
+}
+
+.page-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
+}
+
+.page-card-elevated {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-md);
+}
+
+.badge-soft {
+  @apply inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium;
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: #166534;
+  border-color: #86efac;
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: #b45309;
+  border-color: #fcd34d;
+}
+
+.badge-error {
+  background: var(--error-bg);
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 @keyframes riseIn {

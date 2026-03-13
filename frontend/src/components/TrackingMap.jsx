@@ -85,7 +85,7 @@ const TrackingMap = ({ sightings = [] }) => {
   }, [sightings])
 
   return (
-    <div className="w-full h-[460px] rounded-lg overflow-hidden border border-gray-300">
+    <div className="relative z-0 h-[460px] w-full overflow-hidden rounded-lg border border-primary-200 shadow-[0_8px_18px_rgba(20,105,117,0.08)]">
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
@@ -136,12 +136,12 @@ const TrackingMap = ({ sightings = [] }) => {
               </Tooltip>
               <Popup>
                 <div className="text-sm">
-                  <p className="font-semibold text-gray-900 mb-1">{label}</p>
-                  <p className="text-gray-700">{formatDateLabel(sighting.dateTime)}</p>
-                  <p className="text-gray-700">
+                  <p className="mb-1 font-semibold text-slate-900">{label}</p>
+                  <p className="text-slate-700">{formatDateLabel(sighting.dateTime)}</p>
+                  <p className="text-slate-700">
                     {sighting.latitude.toFixed(5)}, {sighting.longitude.toFixed(5)}
                   </p>
-                  <p className="text-gray-700 mt-1">
+                  <p className="mt-1 text-slate-700">
                     Confidence:{' '}
                     {typeof sighting.confidence === 'number'
                       ? `${(sighting.confidence * 100).toFixed(1)}%`

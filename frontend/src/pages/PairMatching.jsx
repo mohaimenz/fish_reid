@@ -96,7 +96,7 @@ const PairMatching = () => {
         return fishes.length > 0 ? getFishId(fishes[0]) : null
       })
     } catch (err) {
-      setSessionFishesError(err.response?.data?.message || 'Failed to load session fishes for pairing.')
+      setSessionFishesError(err.response?.data?.message || 'Could not load the fish confirmed in this survey.')
       setSessionFishes([])
       setSelectedSessionFishId(null)
     } finally {
@@ -139,7 +139,7 @@ const PairMatching = () => {
       })
       setAllFishes(Array.from(uniqueFishById.values()))
     } catch (err) {
-      setAllFishesError(err.response?.data?.message || 'Failed to load fish list.')
+      setAllFishesError(err.response?.data?.message || 'Could not load the fish record list.')
       setAllFishes([])
     } finally {
       setIsLoadingAllFishes(false)
@@ -160,7 +160,7 @@ const PairMatching = () => {
       setLastConfirmedPair(response?.lastConfirmedPair || response?.last_confirmed_pair || null)
       setCurrentSessionPair(response?.currentSessionPair || response?.current_session_pair || null)
     } catch (err) {
-      setPairHistoryError(err.response?.data?.message || 'Failed to load pair history.')
+      setPairHistoryError(err.response?.data?.message || 'Could not load the pair history.')
       setPairSummary([])
       setPairTimeline([])
       setLastConfirmedPair(null)
@@ -289,11 +289,11 @@ const PairMatching = () => {
         allFishes.find((item) => getFishId(item) === pairFishId)
       )
       setInfoMessage(
-        `Set pair for ${formatFishLabel(selectedSessionFishId, getFishAlias(selectedSessionFish))} -> ${formatFishLabel(pairFishId, assignedPairAlias)}.`
+        `Saved a pair record for ${formatFishLabel(selectedSessionFishId, getFishAlias(selectedSessionFish))} with ${formatFishLabel(pairFishId, assignedPairAlias)}.`
       )
       await Promise.all([loadSessionPairing(selectedSessionFishId), loadPairHistory(selectedSessionFishId)])
     } catch (err) {
-      setPairHistoryError(err.response?.data?.message || err.message || 'Failed to assign pair.')
+      setPairHistoryError(err.response?.data?.message || err.message || 'Could not save the pair record.')
     } finally {
       setIsAssigningPair(false)
     }
@@ -328,9 +328,9 @@ const PairMatching = () => {
           <div className="w-full">
             <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="page-title mb-2">Pair Matching</h1>
+                <h1 className="page-title mb-2">Review Pairings</h1>
                 <p className="page-subtitle">
-                  Manually confirm pair relationships for this session. No automatic pair suggestions are used.
+                  Record observed pair relationships for this survey with full researcher control.
                 </p>
               </div>
               <Button
@@ -374,7 +374,7 @@ const PairMatching = () => {
               <div className="lg:col-span-1">
                 <Card>
                   <Card.Header>
-                    <h2 className="text-lg font-bold text-slate-900">Session Fishes</h2>
+                    <h2 className="text-lg font-bold text-slate-900">Fish in This Survey</h2>
                   </Card.Header>
                   <Card.Body className="space-y-2">
                     {isLoadingSessionFishes ? (
@@ -383,7 +383,7 @@ const PairMatching = () => {
                       </div>
                     ) : sessionFishes.length === 0 ? (
                       <p className="text-sm text-slate-600">
-                        No identified fishes found for this session.
+                        No confirmed fish records are available for this survey yet.
                       </p>
                     ) : (
                       sessionFishes.map((fish) => {
@@ -405,7 +405,7 @@ const PairMatching = () => {
                               w-full rounded-lg border p-3 text-left transition-colors
                               ${isSelected
                                 ? 'border-primary-500 bg-primary-50'
-                                : 'border-slate-200 bg-white hover:border-primary-300'
+                                : 'border-primary-100 bg-white/96 hover:border-primary-300'
                               }
                             `}
                           >
@@ -420,8 +420,8 @@ const PairMatching = () => {
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
                               {currentPairFishId
-                                ? `Current pair: ${formatFishLabel(currentPairFishId, currentPairFishAlias)}`
-                                : 'Current pair: not set for this session'}
+                                ? `Current partner: ${formatFishLabel(currentPairFishId, currentPairFishAlias)}`
+                                : 'No partner recorded for this survey yet'}
                             </p>
                           </button>
                         )
@@ -438,8 +438,8 @@ const PairMatching = () => {
                       <h2 className="text-lg font-bold text-slate-900">Pair History</h2>
                       <p className="text-sm text-slate-600">
                         {selectedSessionFishId
-                          ? `History for ${formatFishLabel(selectedSessionFishId, getFishAlias(selectedSessionFish))} (${pairTimeline.length} events)`
-                          : 'Select a fish from the session list'}
+                          ? `History for ${formatFishLabel(selectedSessionFishId, getFishAlias(selectedSessionFish))} (${pairTimeline.length} records)`
+                          : 'Select a fish from the survey list'}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -467,7 +467,7 @@ const PairMatching = () => {
                         <Spinner size="md" />
                       </div>
                     ) : pairSummary.length === 0 ? (
-                      <p className="text-sm text-slate-600">No confirmed pair history for this fish yet.</p>
+                      <p className="text-sm text-slate-600">No confirmed pair history has been recorded for this fish yet.</p>
                     ) : (
                       <div ref={pairHistorySliderRef} className="flex gap-3 overflow-x-auto pb-2">
                         {pairSummary.map((item) => {
@@ -486,9 +486,9 @@ const PairMatching = () => {
                           return (
                             <div
                               key={pairFishId}
-                              className="min-w-[220px] rounded-lg border border-slate-200 bg-white p-3"
+                              className="min-w-[220px] rounded-lg border border-primary-100 bg-white/96 p-3"
                             >
-                              <div className="mb-2 h-28 w-full overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+                              <div className="mb-2 h-28 w-full overflow-hidden rounded-md border border-primary-100 bg-primary-50/45">
                                 {pairFishPreviewPath ? (
                                   <div className="relative h-full w-full">
                                     <img
@@ -547,24 +547,24 @@ const PairMatching = () => {
 
                 <Card>
                   <Card.Header>
-                    <h2 className="text-lg font-bold text-slate-900">Last Confirmed Pair</h2>
+                    <h2 className="text-lg font-bold text-slate-900">Most Recent Confirmed Partner</h2>
                   </Card.Header>
                   <Card.Body>
                     <p className="text-sm text-slate-600">
                       {lastConfirmedPair
-                        ? `Most recent confirmed partner: ${formatFishLabel(
+                        ? `Most recently confirmed partner: ${formatFishLabel(
                             lastConfirmedPair?.pairFishId || lastConfirmedPair?.pair_fish_id,
                             lastConfirmedPair?.pairFishAlias || lastConfirmedPair?.pair_fish_alias
                           )} (${formatDateLabel(lastConfirmedPair?.dateSeen || lastConfirmedPair?.date_seen)})`
-                        : 'No previously confirmed partner found.'}
+                        : 'No previously confirmed partner was found.'}
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
                       {currentSessionPair
-                        ? `Current session pair: ${formatFishLabel(
+                        ? `Current survey partner: ${formatFishLabel(
                             currentSessionPair?.pairFishId || currentSessionPair?.pair_fish_id,
                             currentSessionPair?.pairFishAlias || currentSessionPair?.pair_fish_alias
                           )}`
-                        : 'Current session pair: not assigned yet.'}
+                        : 'No current survey partner has been assigned yet.'}
                     </p>
                     {lastConfirmedPair && (
                       <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -580,7 +580,7 @@ const PairMatching = () => {
                             key: lastConfirmedPairFishId
                               ? `last-confirmed-partner-${lastConfirmedPairFishId}`
                               : null,
-                            title: 'Last Confirmed Partner',
+                            title: 'Most Recent Partner',
                             fishId: lastConfirmedPairFishId,
                             fishAlias:
                               lastConfirmedPair?.pairFishAlias || lastConfirmedPair?.pair_fish_alias,
@@ -593,7 +593,7 @@ const PairMatching = () => {
                           return (
                             <div
                               key={entry.title}
-                              className="rounded-lg border border-slate-200 bg-slate-50 p-2"
+                              className="rounded-lg border border-primary-100 bg-primary-50/35 p-2"
                             >
                               <p className="text-xs font-semibold text-slate-700">
                                 {entry.title}
@@ -603,7 +603,7 @@ const PairMatching = () => {
                                   ? formatFishLabel(entry.fishId, entry.fishAlias)
                                   : 'Unknown fish'}
                               </p>
-                              <div className="mt-2 h-32 w-full overflow-hidden rounded-md border border-slate-200 bg-white">
+                              <div className="mt-2 h-32 w-full overflow-hidden rounded-md border border-primary-100 bg-white">
                                 {imagePath ? (
                                   <div className="relative h-full w-full">
                                     <img
@@ -655,7 +655,7 @@ const PairMatching = () => {
                         disabled={!lastConfirmedPair || isAssigningPair || !selectedSessionFishId}
                         onClick={handleUseLastConfirmedPair}
                       >
-                        {isAssigningPair ? 'Assigning...' : 'Still with the same fish'}
+                        {isAssigningPair ? 'Saving...' : 'Use the Same Partner'}
                       </Button>
                     </div>
                   </Card.Body>
@@ -664,9 +664,9 @@ const PairMatching = () => {
                 <Card>
                   <Card.Header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-slate-900">Assign New Pair</h2>
+                      <h2 className="text-lg font-bold text-slate-900">Choose a Different Partner</h2>
                       <p className="text-sm text-slate-600">
-                        Search and assign a different fish manually for this session.
+                        Search the wider fish record and assign a different partner for this survey.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -693,18 +693,18 @@ const PairMatching = () => {
                       type="search"
                       value={manualPairSearch}
                       onChange={(event) => setManualPairSearch(event.target.value)}
-                      placeholder="Filter by fish alias, ID, or date"
+                      placeholder="Search by alias, fish ID, or date"
                       icon={<Search size={16} />}
                     />
                     <p className="mt-2 text-xs text-slate-600">
-                      Showing {filteredManualFishList.length} of {Math.max(allFishes.length - (selectedSessionFishId ? 1 : 0), 0)} candidate fishes
+                      Showing {filteredManualFishList.length} of {Math.max(allFishes.length - (selectedSessionFishId ? 1 : 0), 0)} possible partners
                     </p>
                     {isLoadingAllFishes ? (
                       <div className="flex items-center justify-center py-6">
                         <Spinner size="md" />
                       </div>
                     ) : filteredManualFishList.length === 0 ? (
-                      <p className="mt-3 text-sm text-slate-600">No fish IDs match this search term.</p>
+                      <p className="mt-3 text-sm text-slate-600">No fish records match this search.</p>
                     ) : (
                       <div ref={manualPairSliderRef} className="mt-3 flex gap-3 overflow-x-auto pb-2">
                         {filteredManualFishList.map((fish) => {
@@ -721,14 +721,14 @@ const PairMatching = () => {
                             <div
                               key={fishId}
                               className={`
-                                min-w-[220px] rounded-lg border bg-white p-3 transition-colors
+                                min-w-[220px] rounded-lg border bg-white/96 p-3 transition-colors
                                 ${isCurrentSessionPair
                                   ? 'border-primary-500 bg-primary-50'
-                                  : 'border-slate-200 hover:border-primary-300'
+                                  : 'border-primary-100 hover:border-primary-300'
                                 }
                               `}
                             >
-                              <div className="mb-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-md bg-gray-200">
+                              <div className="mb-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-md bg-primary-50/70">
                                 {previewPath ? (
                                   <img
                                     src={resolveImageUrl(previewPath)}
@@ -736,15 +736,15 @@ const PairMatching = () => {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <p className="text-xs text-gray-500">No preview</p>
+                                  <p className="text-xs text-slate-500">No preview yet</p>
                                 )}
                               </div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-semibold text-slate-900">
                                 {fishAlias || `Fish #${formatFishIdForDisplay(fishId)}`}
                               </p>
-                              <p className="mt-1 text-xs text-gray-500">ID: {formatFishIdForDisplay(fishId)}</p>
-                              <p className="mt-1 text-xs text-gray-600">{sightingsCount} sightings</p>
-                              <p className="mt-1 text-xs text-gray-500">{formatDateLabel(lastIdentifiedAt)}</p>
+                              <p className="mt-1 text-xs text-slate-500">ID: {formatFishIdForDisplay(fishId)}</p>
+                              <p className="mt-1 text-xs text-slate-600">{sightingsCount} sightings</p>
+                              <p className="mt-1 text-xs text-slate-500">{formatDateLabel(lastIdentifiedAt)}</p>
                               <Button
                                 type="button"
                                 size="sm"
@@ -753,7 +753,7 @@ const PairMatching = () => {
                                 disabled={isAssigningPair || !selectedSessionFishId}
                                 onClick={() => handleAssignPair(fishId)}
                               >
-                                {isAssigningPair ? 'Assigning...' : 'Assign as Pair'}
+                                {isAssigningPair ? 'Saving...' : 'Use as Partner'}
                               </Button>
                             </div>
                           )
@@ -767,10 +767,10 @@ const PairMatching = () => {
 
             <div className="mt-6 flex justify-between">
               <Button variant="outline" onClick={() => navigate('/identification')}>
-                Back to Identification
+                Back to Identity Review
               </Button>
               <Button variant="primary" onClick={handleOpenTracking} disabled={!selectedSessionFishId}>
-                Open Tracking for Selected Fish
+                Open Sighting History
               </Button>
             </div>
           </div>

@@ -93,10 +93,10 @@ const Register = () => {
   }
 
   return (
-    <Card className="stagger-in">
+    <Card className="stagger-in rounded-[20px] border-slate-200 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
       <Card.Header>
-        <h2 className="text-2xl font-bold text-slate-900">Create Account</h2>
-        <p className="mt-1 text-sm text-slate-600">Set up your workspace for fish identification and tracking.</p>
+        <h2 className="text-2xl font-bold text-slate-900">Join the project</h2>
+        <p className="mt-1 text-sm text-slate-600">Create your researcher account to review surveys, confirm identities, and track sightings over time.</p>
       </Card.Header>
       
       <Card.Body>
@@ -165,16 +165,16 @@ const Register = () => {
             disabled={isSubmitting}
             icon={<UserRoundPlus size={16} />}
           >
-            {isSubmitting ? 'Creating account...' : 'Register'}
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
           </Button>
         </form>
       </Card.Body>
       
       <Card.Footer>
         <p className="text-center text-sm text-slate-600">
-          Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-primary-700 hover:text-primary-800">
-            Login
+          Already part of the project?{' '}
+          <Link to="/login" className="font-semibold text-primary-700 hover:text-primary-500">
+            Sign in
           </Link>
         </p>
       </Card.Footer>

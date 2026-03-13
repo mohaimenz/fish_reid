@@ -93,7 +93,7 @@ const TrackingHistory = () => {
       const response = await workflowService.getTrackingHistory(selectedFishId)
       setTrackingHistory(response)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load tracking history.')
+      setError(err.response?.data?.message || 'Could not load the sighting history.')
     } finally {
       setIsLoading(false)
     }
@@ -113,7 +113,7 @@ const TrackingHistory = () => {
       <div className="page-shell flex items-center justify-center">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-slate-600">Loading tracking history...</p>
+          <p className="mt-4 text-slate-600">Loading sighting history...</p>
         </div>
       </div>
     )
@@ -124,9 +124,9 @@ const TrackingHistory = () => {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Tracking History</h1>
+            <h1 className="page-title">Sighting History</h1>
             <p className="page-subtitle">
-              Historical observations for{' '}
+              Research record for{' '}
               {trackedFishAlias
                 ? `${trackedFishAlias} (#${formatFishIdForDisplay(selectedFishId)})`
                 : `fish #${formatFishIdForDisplay(selectedFishId)}`}
@@ -134,7 +134,7 @@ const TrackingHistory = () => {
             </p>
           </div>
           <Button onClick={handleNewTracking} variant="outline">
-            Start New Session
+            Start a New Survey
           </Button>
         </div>
 
@@ -145,7 +145,7 @@ const TrackingHistory = () => {
         )}
 
         {/* View Selector */}
-        <div className="mb-6 inline-flex rounded-xl border border-slate-200 bg-white/85 p-1 shadow-sm">
+        <div className="mb-6 inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
           <button
             type="button"
             onClick={() => setActiveView('map')}
@@ -156,7 +156,7 @@ const TrackingHistory = () => {
             }`}
           >
             <MapIcon size={16} />
-            Map View
+            Map
           </button>
           <button
             type="button"
@@ -180,7 +180,7 @@ const TrackingHistory = () => {
             }`}
           >
             <Image size={16} />
-            Photo Gallery
+            Gallery
           </button>
           <button
             type="button"
@@ -192,7 +192,7 @@ const TrackingHistory = () => {
             }`}
           >
             <Link2 size={16} />
-            Pair Tracking
+            Pair History
           </button>
         </div>
 
@@ -201,15 +201,15 @@ const TrackingHistory = () => {
           <Card>
             <Card.Body>
               {mapSightings.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  No geotagged sightings available for map view.
+                <p className="py-8 text-center text-slate-500">
+                  No geotagged sightings are available for the map yet.
                 </p>
               ) : (
                 <div className="space-y-3">
                   <TrackingMap sightings={mapSightings} />
-                  <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2">
-                    <p className="text-sm text-blue-900">
-                      Directed graph view: lines connect sightings from earliest to latest, and arrows show direction of movement.
+                  <div className="rounded-md border border-blue-300 bg-blue-100 px-3 py-2">
+                    <p className="text-sm text-blue-700">
+                      Lines connect sightings from earliest to latest so you can follow the movement sequence over time.
                     </p>
                   </div>
                 </div>
@@ -235,7 +235,7 @@ const TrackingHistory = () => {
                       </div>
                       <div className="flex-1">
                         <p className="font-semibold text-slate-900">
-                          Location: {sighting.latitude ?? 'N/A'}, {sighting.longitude ?? 'N/A'}
+                          Site coordinates: {sighting.latitude ?? 'N/A'}, {sighting.longitude ?? 'N/A'}
                         </p>
                         <p className="mt-1 text-sm text-slate-600">
                           Confidence: {typeof sighting.confidence === 'number' ? `${(sighting.confidence * 100).toFixed(1)}%` : 'N/A'}
@@ -244,8 +244,8 @@ const TrackingHistory = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-gray-500 py-8">
-                    No sighting history available
+                  <p className="py-8 text-center text-slate-500">
+                    No sighting history is available yet.
                   </p>
                 )}
               </div>
@@ -271,7 +271,7 @@ const TrackingHistory = () => {
                         type="button"
                         key={`${image.annotationId || index}-${index}`}
                         onClick={() => setSelectedGalleryIndex(index)}
-                        className="group aspect-square bg-gray-200 rounded-lg overflow-hidden relative text-left border border-transparent hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="group relative aspect-square overflow-hidden rounded-lg border border-transparent bg-slate-100 text-left hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       >
                         {src ? (
                           <img
@@ -281,7 +281,7 @@ const TrackingHistory = () => {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-sm text-gray-500">No image path</p>
+                            <p className="text-sm text-slate-500">No image path</p>
                           </div>
                         )}
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
@@ -291,8 +291,8 @@ const TrackingHistory = () => {
                     )
                   })
                 ) : (
-                  <p className="col-span-full text-center text-gray-500 py-8">
-                    No images available
+                  <p className="col-span-full py-8 text-center text-slate-500">
+                    No images are available yet.
                   </p>
                 )}
               </div>
@@ -303,12 +303,12 @@ const TrackingHistory = () => {
         {activeView === 'pair' && (
           <Card>
             <Card.Header>
-              <h2 className="text-lg font-semibold">Pair Tracking Timeline</h2>
+              <h2 className="text-lg font-semibold">Pair History Timeline</h2>
             </Card.Header>
             <Card.Body>
               {pairTimeline.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
-                  No confirmed pair history available.
+                <p className="py-8 text-center text-slate-500">
+                  No confirmed pair history is available yet.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -339,7 +339,7 @@ const TrackingHistory = () => {
                           Site: {siteName || 'Unknown'}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          Session: {sessionId || 'Unknown'}
+                          Survey: {sessionId || 'Unknown'}
                         </p>
                       </div>
                     )
@@ -384,29 +384,29 @@ const TrackingHistory = () => {
       </div>
 
       {selectedGalleryImage && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[20px] bg-white shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-slate-900">
                   {trackedFishAlias
                     ? `${trackedFishAlias} (#${formatFishIdForDisplay(selectedFishId)})`
                     : `Fish ID: ${formatFishIdForDisplay(selectedFishId)}`}
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="mono-text text-xs text-slate-600">
                   {selectedGalleryImage.dateTime ? new Date(selectedGalleryImage.dateTime).toLocaleString() : 'Unknown date'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeGalleryModal}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
                 aria-label="Close preview"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="bg-gray-900 h-[70vh] flex items-center justify-center">
+            <div className="flex h-[70vh] items-center justify-center bg-slate-800">
               {(selectedGalleryImage.imagePath || selectedGalleryImage.image_path) ? (
                 <img
                   src={resolveImageUrl(selectedGalleryImage.imagePath || selectedGalleryImage.image_path)}
@@ -414,7 +414,7 @@ const TrackingHistory = () => {
                   className="max-w-full max-h-full object-contain"
                 />
               ) : (
-                <p className="text-gray-200 text-sm">No image available</p>
+                <p className="text-sm text-slate-200">No image available</p>
               )}
             </div>
           </div>

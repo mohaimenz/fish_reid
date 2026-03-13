@@ -56,7 +56,7 @@ const FishManager = () => {
       setTotal(Number(response?.total || 0))
       setTotalPages(Number(response?.totalPages ?? response?.total_pages ?? 0))
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load fishes.')
+      setError(err.response?.data?.message || 'Could not load the fish records.')
       setFishes([])
       setTotal(0)
       setTotalPages(0)
@@ -113,12 +113,12 @@ const FishManager = () => {
       setInfoMessage(
         savedAlias
           ? `Saved alias "${savedAlias}" for fish #${formatFishIdForDisplay(fishId)}.`
-          : `Cleared alias for fish #${formatFishIdForDisplay(fishId)}.`
+          : `Cleared the alias for fish #${formatFishIdForDisplay(fishId)}.`
       )
       setEditingFishId(null)
       setFishAliasDraft('')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save fish alias.')
+      setError(err.response?.data?.message || 'Could not save the fish alias.')
     } finally {
       setSavingFishId(null)
     }
@@ -129,9 +129,9 @@ const FishManager = () => {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Fishes</h1>
+            <h1 className="page-title">Fish Records</h1>
             <p className="page-subtitle">
-              Central registry of identified fishes across sessions.
+              Browse the confirmed fish records built across all surveys.
             </p>
           </div>
 
@@ -176,13 +176,13 @@ const FishManager = () => {
           </Alert>
         )}
 
-        <Card className="stagger-in">
+        <Card className="stagger-in border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]">
           <Card.Header className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Identified Fish List</h2>
+            <h2 className="text-lg font-bold text-slate-900">Confirmed Fish Records</h2>
             <p className="text-sm text-slate-600">
               {total > 0
-                ? `Page ${page} of ${totalPages} · ${total} fishes`
-                : 'No identified fishes yet'}
+                ? `Page ${page} of ${totalPages} · ${total} fish records`
+                : 'No confirmed fish records yet'}
             </p>
           </Card.Header>
           <Card.Body className="p-0">
@@ -192,13 +192,13 @@ const FishManager = () => {
               </div>
             ) : fishes.length === 0 ? (
               <div className="px-6 py-10">
-                <p className="text-slate-600">No fishes found.</p>
+                <p className="text-slate-600">No fish records were found.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50/85 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
                       <th className="px-6 py-3 font-semibold">Fish</th>
                       <th className="px-6 py-3 font-semibold">Alias</th>
                       <th className="px-6 py-3 font-semibold">Sightings</th>
@@ -222,10 +222,10 @@ const FishManager = () => {
                       if (!fishId) return null
 
                       return (
-                        <tr key={fishId} className="border-t border-slate-200/80 text-slate-700">
+                        <tr key={fishId} className="border-t border-slate-200 text-slate-700 hover:bg-slate-50/80">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="h-11 w-11 overflow-hidden rounded-lg bg-slate-200">
+                              <div className="h-11 w-11 overflow-hidden rounded-lg bg-slate-100">
                                 {previewPath ? (
                                   <img
                                     src={resolveImageUrl(previewPath)}
@@ -238,7 +238,7 @@ const FishManager = () => {
                                 <p className="font-semibold text-slate-900">
                                   {fishAlias || `Fish #${formatFishIdForDisplay(fishId)}`}
                                 </p>
-                                <p className="text-xs text-slate-500">{fishId}</p>
+                                <p className="mono-text text-xs text-slate-500">{fishId}</p>
                               </div>
                             </div>
                           </td>
@@ -255,9 +255,9 @@ const FishManager = () => {
                                       handleSaveFishAlias(fishId)
                                     }
                                   }}
-                                  placeholder="Enter fish alias"
+                                  placeholder="Enter a fish alias"
                                   maxLength={80}
-                                  className="h-8 w-44 rounded-md border border-slate-300 px-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                                  className="mono-text h-8 w-44 rounded-md border border-slate-300 px-2 text-sm text-slate-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                                 />
                                 <Button
                                   type="button"
@@ -281,7 +281,7 @@ const FishManager = () => {
                             ) : fishAlias ? (
                               <p className="font-medium text-slate-900">{fishAlias}</p>
                             ) : (
-                              <p className="text-slate-400">No alias</p>
+                              <p className="text-slate-400">No alias yet</p>
                             )}
                           </td>
                           <td className="px-6 py-4 font-semibold">{sightingsCount}</td>
@@ -307,7 +307,7 @@ const FishManager = () => {
                                 disabled={isSavingRow}
                                 onClick={() => handleOpenTracking(fishId)}
                               >
-                                Open Tracking
+                                Open History
                               </Button>
                             </div>
                           </td>

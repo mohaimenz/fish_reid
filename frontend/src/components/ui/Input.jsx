@@ -15,7 +15,7 @@ const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="mb-1.5 block text-sm font-semibold text-slate-700"
+          className="mb-1.5 block text-sm font-medium text-slate-700"
         >
           {label}
           {required && <span className="ml-1 text-red-500">*</span>}
@@ -31,12 +31,12 @@ const Input = ({
           id={inputId}
           type={type}
           className={`
-            w-full rounded-xl border bg-white/95 px-4 py-2.5 text-slate-900
+            w-full rounded-md border bg-white px-4 py-2.5 text-slate-950
             placeholder:text-slate-400
-            focus:border-primary-400 focus:ring-4 focus:ring-primary-100
+            focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20
             disabled:cursor-not-allowed disabled:bg-slate-100
             ${icon ? 'pl-10' : ''}
-            ${error ? 'border-red-400 focus:ring-red-100 focus:border-red-400' : 'border-slate-300'}
+            ${error ? 'border-red-500 focus:ring-red-500/15 focus:border-red-500' : 'border-slate-300'}
             ${className}
           `}
           {...props}

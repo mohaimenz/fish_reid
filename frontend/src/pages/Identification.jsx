@@ -255,7 +255,7 @@ const Identification = () => {
       setIdentifiedFishList(Array.from(uniqueFishById.values()))
     } catch (err) {
       setIdentifiedFishError(
-        err.response?.data?.message || err.message || 'Failed to load identified fishes.'
+        err.response?.data?.message || err.message || 'Could not load the fish record list.'
       )
       setIdentifiedFishList([])
     } finally {
@@ -279,7 +279,7 @@ const Identification = () => {
     try {
       const effectiveAnnotationIds = getEffectiveAnnotationIds()
       if (effectiveAnnotationIds.length === 0) {
-        setError('No saved annotations available for identification.')
+        setError('There are no saved annotations ready for identity review.')
         setIdentifications([])
         return
       }
@@ -296,10 +296,10 @@ const Identification = () => {
       hydrateIdentifications(incoming)
 
       if (incoming.length === 0) {
-        setError('No fish annotations were available for identification.')
+        setError('No reviewed fish annotations were available for identity review.')
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Identification failed. Please try again.')
+      setError(err.response?.data?.message || 'Identity review could not be completed. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -545,11 +545,11 @@ const Identification = () => {
       setIdentifications(updatedIdentifications)
       setSelectedFishId(assignedFishId)
       setInfoMessage(
-        `Detection #${currentFishIndex + 1} assigned to ${formatFishLabel(assignedFishId, assignedFishAlias)}.`
+        `Fish ${currentFishIndex + 1} is now linked to ${formatFishLabel(assignedFishId, assignedFishAlias)}.`
       )
       await loadIdentifiedFishList()
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to assign identity.')
+      setError(err.response?.data?.message || err.message || 'Could not save that identity decision.')
     } finally {
       setIsAssigningIdentity(false)
     }
@@ -571,7 +571,7 @@ const Identification = () => {
     const annotationId =
       currentIdentification?.annotationId || currentIdentification?.annotation_id || null
     if (!annotationId) {
-      setError('Unable to create identity: missing annotation ID.')
+      setError('Could not create a new fish record because the annotation ID is missing.')
       return
     }
 
@@ -581,7 +581,7 @@ const Identification = () => {
       const response = await workflowService.createNewIdentity(annotationId)
       const newFishId = response?.fishId || response?.fish_id
       if (!newFishId) {
-        throw new Error('No fish ID was returned for the new identity.')
+        throw new Error('A new fish record was created, but no fish ID was returned.')
       }
 
       const key = getAnnotationKey(currentIdentification, currentFishIndex)
@@ -602,11 +602,11 @@ const Identification = () => {
       setIdentifications(updatedIdentifications)
       setSelectedFishId(newFishId)
       setInfoMessage(
-        `Detection #${currentFishIndex + 1} assigned to new identity ${formatFishIdForDisplay(newFishId)}. Please click "Re-Calculate Matches" to refresh suggestions from the updated fish table.`
+        `Fish ${currentFishIndex + 1} is now saved as a new fish record (${formatFishIdForDisplay(newFishId)}). Refresh the match suggestions to compare against the updated record list.`
       )
       await loadIdentifiedFishList()
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to create new identity.')
+      setError(err.response?.data?.message || err.message || 'Could not create a new fish record.')
     } finally {
       setIsCreatingIdentity(false)
     }
@@ -640,7 +640,7 @@ const Identification = () => {
   const currentFullImagePath =
     currentIdentification?.imagePath || currentIdentification?.image_path || ''
   const currentPreviewImagePath = currentQueryCropPath || currentFullImagePath
-  const currentPreviewLabel = currentQueryCropPath ? 'Detected Fish Crop' : 'Full Image'
+  const currentPreviewLabel = currentQueryCropPath ? 'Detected Fish Detail' : 'Full Survey Photo'
 
   if (isLoading) {
     return (
@@ -650,7 +650,7 @@ const Identification = () => {
           <div className="workflow-main flex min-h-[320px] items-center justify-center">
             <div className="text-center">
               <Spinner size="lg" />
-              <p className="mt-4 text-gray-600">Re-calculating fish matches...</p>
+              <p className="mt-4 text-slate-600">Refreshing likely matches from the fish record...</p>
             </div>
           </div>
         </div>
@@ -666,9 +666,9 @@ const Identification = () => {
           <div className="w-full">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-3">
             <div>
-              <h1 className="page-title mb-2">RabbitFish Identification</h1>
+              <h1 className="page-title mb-2">Confirm Identities</h1>
               <p className="page-subtitle">
-                Select or confirm the identity of detected fish
+                Review each detected fish and decide whether it matches an existing record.
               </p>
             </div>
             <Button
@@ -677,7 +677,7 @@ const Identification = () => {
               disabled={isLoading || identifications.length === 0}
               icon={<RefreshCcw size={16} />}
             >
-              Re-Calculate Matches
+              Refresh Match Suggestions
             </Button>
           </div>
 
@@ -697,7 +697,7 @@ const Identification = () => {
             <div className="lg:col-span-1">
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-bold">Detections</h2>
+                  <h2 className="text-lg font-bold">Detected Fish</h2>
                 </Card.Header>
                 <Card.Body className="space-y-2">
                   {identifications.map((item, index) => {
@@ -724,24 +724,24 @@ const Identification = () => {
                       className={`
                         w-full rounded-xl border p-3 text-left transition-colors
                         ${index === currentFishIndex 
-                          ? 'border-primary-500 bg-primary-50 shadow-[0_4px_12px_rgba(22,135,218,0.14)]' 
-                          : 'border-slate-200 bg-white hover:border-primary-300'
+                          ? 'border-primary-500 bg-primary-50 shadow-[0_4px_12px_rgba(20,105,117,0.14)]' 
+                          : 'border-primary-100 bg-white/96 hover:border-primary-300'
                         }
                       `}
                     >
-                      <p className="text-sm font-medium">Detection #{index + 1}</p>
+                      <p className="text-sm font-medium">Fish {index + 1}</p>
                       {item?.error ? (
                         <p className="text-xs text-red-600 mt-1">{item.error}</p>
                       ) : (
-                        <p className="text-xs text-gray-600 mt-1">
-                          {selectedId ? `Assigned: ${formatFishLabel(selectedId, assignedAlias)}` : 'No assigned ID'}
+                        <p className="mt-1 text-xs text-slate-600">
+                          {selectedId ? `Confirmed as ${formatFishLabel(selectedId, assignedAlias)}` : 'Not confirmed yet'}
                         </p>
                       )}
                       {!item?.error && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="mt-1 text-xs text-slate-500">
                           {suggestedId
-                            ? `Suggested: ${formatFishLabel(suggestedId, suggestedAlias)}`
-                            : 'Suggested: none'}
+                            ? `Suggested match: ${formatFishLabel(suggestedId, suggestedAlias)}`
+                            : 'No suggested match yet'}
                         </p>
                       )}
                     </button>
@@ -757,7 +757,7 @@ const Identification = () => {
               <Card className="mb-6">
                 <Card.Header className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-bold">
-                    Current Detection - #{currentFishIndex + 1}
+                    Current Fish - {currentFishIndex + 1}
                   </h2>
                   <Button
                     type="button"
@@ -767,7 +767,7 @@ const Identification = () => {
                     onClick={handleCreateNewIdentity}
                     disabled={isCreatingIdentity || isAssigningIdentity || !!currentIdentification?.error}
                   >
-                    {isCreatingIdentity ? 'Creating...' : 'Create New Identity'}
+                    {isCreatingIdentity ? 'Creating...' : 'Create New Fish Record'}
                   </Button>
                 </Card.Header>
                 <Card.Body>
@@ -775,7 +775,7 @@ const Identification = () => {
                     <Alert type="error">{currentIdentification.error}</Alert>
                   ) : (
                     <div>
-                      <div className="relative bg-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="relative overflow-hidden rounded-lg border border-primary-100 bg-primary-50/45">
                         {currentFullImagePath ? (
                           <>
                             <button
@@ -822,13 +822,13 @@ const Identification = () => {
                                   </svg>
                                 )}
                               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                                <p className="text-xs text-white">Click to view crop</p>
+                                <p className="text-xs text-white">Click to open detail view</p>
                               </div>
                             </button>
                           </>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <p className="text-slate-600 text-sm">No image available</p>
+                            <p className="text-slate-600 text-sm">No image is available</p>
                           </div>
                         )}
                       </div>
@@ -840,7 +840,7 @@ const Identification = () => {
               {/* Top Matches */}
               <Card className="mb-6">
                 <Card.Header>
-                  <h2 className="text-lg font-bold">Top 3 Matches</h2>
+                  <h2 className="text-lg font-bold">Most Likely Matches</h2>
                 </Card.Header>
                 <Card.Body>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -854,8 +854,8 @@ const Identification = () => {
                           className={`
                             relative rounded-xl border p-4 transition-all
                             ${currentSelectedFishId === matchFishId
-                              ? 'border-primary-500 bg-primary-50 shadow-[0_6px_16px_rgba(22,135,218,0.14)]'
-                              : 'border-slate-200 bg-white'
+                              ? 'border-primary-500 bg-primary-50 shadow-[0_6px_16px_rgba(20,105,117,0.14)]'
+                              : 'border-primary-100 bg-white/96'
                             }
                           `}
                         >
@@ -867,7 +867,7 @@ const Identification = () => {
                             </div>
                           )}
                           
-                          <div className="bg-gray-200 h-48 rounded-lg mb-3 overflow-hidden flex items-center justify-center">
+                          <div className="mb-3 flex h-48 items-center justify-center overflow-hidden rounded-lg bg-primary-50/70">
                             {matchImagePath ? (
                               <img
                                 src={resolveImageUrl(matchImagePath)}
@@ -876,25 +876,25 @@ const Identification = () => {
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <p className="text-sm text-gray-500">Match {index + 1}</p>
+                                <p className="text-sm text-slate-500">Match {index + 1}</p>
                               </div>
                             )}
                           </div>
                           
-                          <p className="text-sm font-medium text-gray-900 mb-1">
+                          <p className="mb-1 text-sm font-medium text-slate-900">
                             {matchFishAlias || `Fish #${formatFishIdForDisplay(matchFishId)}`}
                           </p>
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p className="mb-1 text-xs text-slate-500">
                             ID: {formatFishIdForDisplay(matchFishId)}
                           </p>
-                          <p className="text-xs text-gray-600 mb-2">
-                            Distance: {typeof match.distance === 'number' ? match.distance.toFixed(4) : 'N/A'}
+                          <p className="mb-2 text-xs text-slate-600">
+                            Match distance: {typeof match.distance === 'number' ? match.distance.toFixed(4) : 'N/A'}
                           </p>
-                          <div className="mb-1 flex items-center justify-between text-xs text-gray-600">
+                          <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
                             <span>Confidence</span>
                             <span>{((match.confidence || 0) * 100).toFixed(0)}%</span>
                           </div>
-                          <div className="bg-gray-200 rounded-full h-2">
+                          <div className="h-2 rounded-full bg-primary-100">
                             <div
                               className="bg-primary-600 h-2 rounded-full"
                               style={{ width: `${(match.confidence || 0) * 100}%` }}
@@ -910,7 +910,7 @@ const Identification = () => {
                               className="w-full"
                               onClick={(event) => handleOpenMatchPreview(event, match)}
                             >
-                              Compare
+                              Compare Images
                             </Button>
                             <Button
                               type="button"
@@ -920,7 +920,7 @@ const Identification = () => {
                               disabled={isAssigningIdentity}
                               onClick={(event) => handleAssignPositive(event, match)}
                             >
-                              {isAssigningIdentity ? 'Assigning...' : 'Assign Identity'}
+                              {isAssigningIdentity ? 'Saving...' : 'Confirm This Match'}
                             </Button>
                           </div>
                         </div>
@@ -929,8 +929,8 @@ const Identification = () => {
                   </div>
 
                   {(!currentMatches || currentMatches.length === 0) && (
-                    <p className="text-center text-gray-500 py-8">
-                      No matches found for this fish
+                    <p className="py-8 text-center text-slate-500">
+                      No likely matches were found for this fish.
                     </p>
                   )}
                 </Card.Body>
@@ -939,15 +939,15 @@ const Identification = () => {
               {/* Assign Manually */}
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-bold">Assign Manually</h2>
+                  <h2 className="text-lg font-bold">Browse the Fish Record</h2>
                 </Card.Header>
                 <Card.Body>
-                  <div className="rounded-xl border border-slate-200/85 bg-slate-50/70 p-4">
+                  <div className="rounded-xl border border-primary-100 bg-primary-50/35 p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <p className="text-sm text-slate-600">
-                        Search by alias, fish ID, or date and assign from the horizontal slider.
+                        Search by alias, fish ID, or date and choose a record manually.
                       </p>
-                      <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                      <div className="inline-flex items-center gap-1 rounded-lg border border-primary-100 bg-white p-1 shadow-sm">
                         <Button
                           type="button"
                           variant="ghost"
@@ -956,10 +956,10 @@ const Identification = () => {
                           icon={<RefreshCcw size={14} />}
                           onClick={loadIdentifiedFishList}
                           disabled={isLoadingIdentifiedFish}
-                          aria-label="Refresh fish list"
-                          title="Refresh fish list"
+                          aria-label="Refresh fish record list"
+                          title="Refresh fish record list"
                         />
-                        <div className="mx-1 h-4 w-px bg-slate-200" />
+                        <div className="mx-1 h-4 w-px bg-primary-100" />
                         <Button
                           type="button"
                           variant="ghost"
@@ -968,7 +968,7 @@ const Identification = () => {
                           icon={<ChevronLeft size={14} />}
                           onClick={() => handleScrollManualFishSlider(-1)}
                           disabled={isLoadingIdentifiedFish || filteredIdentifiedFish.length === 0}
-                          aria-label="Scroll fish list left"
+                          aria-label="Scroll fish record list left"
                           title="Scroll left"
                         />
                         <Button
@@ -979,7 +979,7 @@ const Identification = () => {
                           icon={<ChevronRight size={14} />}
                           onClick={() => handleScrollManualFishSlider(1)}
                           disabled={isLoadingIdentifiedFish || filteredIdentifiedFish.length === 0}
-                          aria-label="Scroll fish list right"
+                          aria-label="Scroll fish record list right"
                           title="Scroll right"
                         />
                       </div>
@@ -990,13 +990,13 @@ const Identification = () => {
                         type="search"
                         value={manualFishSearch}
                         onChange={(event) => setManualFishSearch(event.target.value)}
-                        placeholder="Filter by fish alias, ID, or date"
+                        placeholder="Search by alias, fish ID, or date"
                         icon={<Search size={16} />}
                       />
                     </div>
 
                     <p className="mt-2 text-xs text-slate-600">
-                      Showing {filteredIdentifiedFish.length} of {identifiedFishList.length} fish IDs
+                      Showing {filteredIdentifiedFish.length} of {identifiedFishList.length} fish records
                     </p>
 
                     {isLoadingIdentifiedFish ? (
@@ -1007,7 +1007,7 @@ const Identification = () => {
                       <p className="mt-3 text-sm text-red-600">{identifiedFishError}</p>
                     ) : filteredIdentifiedFish.length === 0 ? (
                       <p className="mt-3 text-sm text-slate-600">
-                        No fish IDs match this search term.
+                        No fish records match this search.
                       </p>
                     ) : (
                       <div
@@ -1037,7 +1037,7 @@ const Identification = () => {
                                 }
                               `}
                             >
-                              <div className="mb-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-md bg-gray-200">
+                              <div className="mb-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-md bg-slate-100">
                                 {previewPath ? (
                                   <img
                                     src={resolveImageUrl(previewPath)}
@@ -1045,17 +1045,17 @@ const Identification = () => {
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <p className="text-xs text-gray-500">No preview</p>
+                                  <p className="text-xs text-slate-500">No preview yet</p>
                                 )}
                               </div>
-                              <p className="text-sm font-semibold text-gray-900">
+                              <p className="text-sm font-semibold text-slate-900">
                                 {fishAlias || `Fish #${formatFishIdForDisplay(fishId)}`}
                               </p>
-                              <p className="mt-1 text-xs text-gray-500">
+                              <p className="mt-1 text-xs text-slate-500">
                                 ID: {formatFishIdForDisplay(fishId)}
                               </p>
-                              <p className="mt-1 text-xs text-gray-600">{sightingsCount} sightings</p>
-                              <p className="mt-1 text-xs text-gray-500">{formatDateLabel(lastIdentifiedAt)}</p>
+                              <p className="mt-1 text-xs text-slate-600">{sightingsCount} sightings</p>
+                              <p className="mt-1 text-xs text-slate-500">{formatDateLabel(lastIdentifiedAt)}</p>
                               <Button
                                 type="button"
                                 size="sm"
@@ -1064,7 +1064,7 @@ const Identification = () => {
                                 disabled={!previewPath}
                                 onClick={(event) => handleOpenMatchPreview(event, fish)}
                               >
-                                View Crop
+                                View Image
                               </Button>
                               <Button
                                 type="button"
@@ -1079,7 +1079,7 @@ const Identification = () => {
                                   })
                                 }
                               >
-                                {isAssigningIdentity ? 'Assigning...' : 'Assign Identity'}
+                                {isAssigningIdentity ? 'Saving...' : 'Use This Record'}
                               </Button>
                             </div>
                           )
@@ -1096,14 +1096,14 @@ const Identification = () => {
                   variant="outline"
                   onClick={() => navigate('/detection')}
                 >
-                  Back to Detection
+                  Back to Detection Review
                 </Button>
                 <Button
                   variant="primary"
                   onClick={() => navigate('/pair-matching')}
                   disabled={identifications.length === 0}
                 >
-                  Continue to Pair Matching
+                  Continue to Pair Review
                 </Button>
               </div>
             </div>
@@ -1113,32 +1113,32 @@ const Identification = () => {
       </div>
 
       {selectedCurrentImagePreview && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-fit max-w-[95vw] max-h-[95vh] overflow-hidden shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+          <div className="max-h-[95vh] w-fit max-w-[95vw] overflow-hidden rounded-[20px] bg-white shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Detection #{selectedCurrentImagePreview.detectionIndex} - {selectedCurrentImagePreview.label}
+                <p className="text-sm font-medium text-slate-900">
+                  Fish {selectedCurrentImagePreview.detectionIndex} - {selectedCurrentImagePreview.label}
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-slate-600">
                   {selectedCurrentImagePreview.fishId
                     ? formatFishLabel(
                         selectedCurrentImagePreview.fishId,
                         selectedCurrentImagePreview.fishAlias
                       )
-                    : 'No assigned ID'}
+                    : 'No linked record yet'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleCloseCurrentImagePreview}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
                 aria-label="Close current image preview"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="bg-gray-900 p-2 flex items-center justify-center min-h-[75vh]">
+            <div className="flex min-h-[75vh] items-center justify-center bg-slate-800 p-2">
               <img
                 src={selectedCurrentImagePreview.imageUrl}
                 alt={`${selectedCurrentImagePreview.label} preview`}
@@ -1150,18 +1150,18 @@ const Identification = () => {
       )}
 
       {previewMatch && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-900">
-                Detection #{previewMatch.detectionIndex} vs{' '}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[20px] bg-white shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <p className="text-sm font-medium text-slate-900">
+                Fish {previewMatch.detectionIndex} compared with{' '}
                 {formatFishLabel(previewMatch.fishId, previewMatch.fishAlias)}
               </p>
               <div className="flex items-center gap-2">
-                <label className="inline-flex items-center gap-2 text-xs text-gray-700">
+                <label className="inline-flex items-center gap-2 text-xs text-slate-700">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-4 w-4 rounded border-slate-300"
                     checked={showPreviewVisualization}
                     onChange={(event) => handleTogglePreviewVisualization(event.target.checked)}
                   />
@@ -1196,14 +1196,14 @@ const Identification = () => {
                 <button
                   type="button"
                   onClick={handleCloseMatchPreview}
-                  className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+                  className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
                   aria-label="Close match crop preview"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
-            <div className="bg-gray-200 p-4 md:p-6 max-h-[80vh] overflow-auto">
+            <div className="max-h-[80vh] overflow-auto bg-slate-100 p-4 md:p-6">
               {showPreviewVisualization && (
                 <div className="mb-3 rounded-md border border-slate-300 bg-white/80 px-3 py-2 text-xs text-slate-700">
                   <p>
@@ -1219,7 +1219,7 @@ const Identification = () => {
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-lg bg-black/20 p-3">
-                  <p className="text-xs text-gray-900 mb-2">
+                  <p className="mb-2 text-xs text-slate-900">
                     Detection
                     {showPreviewVisualization ? ` (${previewVariantLabel})` : ''}
                   </p>
@@ -1231,13 +1231,13 @@ const Identification = () => {
                         className="h-full w-full object-contain"
                       />
                     ) : (
-                      <p className="text-sm text-gray-300">No query crop available</p>
+                      <p className="text-sm text-slate-300">No query crop available</p>
                     )}
                   </div>
                 </div>
 
                 <div className="rounded-lg bg-black/20 p-3">
-                  <p className="text-xs text-gray-900 mb-2">
+                  <p className="mb-2 text-xs text-slate-900">
                     Matched Fish
                     {showPreviewVisualization ? ` (${previewVariantLabel})` : ''}
                   </p>
@@ -1249,7 +1249,7 @@ const Identification = () => {
                         className="h-full w-full object-contain"
                       />
                     ) : (
-                      <p className="text-sm text-gray-300">No match crop available</p>
+                      <p className="text-sm text-slate-300">No match crop available</p>
                     )}
                   </div>
                 </div>

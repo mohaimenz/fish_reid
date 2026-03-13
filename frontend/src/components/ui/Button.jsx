@@ -17,17 +17,17 @@ const Button = ({
   
   const variants = {
     primary:
-      'border-primary-700 bg-primary-700 text-white shadow-sm hover:border-primary-800 hover:bg-primary-800 focus-visible:ring-primary-500',
+      'border-primary-500 bg-primary-500 text-white shadow-sm hover:border-primary-700 hover:bg-primary-700 focus-visible:ring-primary-500 active:border-primary-900 active:bg-primary-900',
     secondary:
-      'border-slate-700 bg-slate-700 text-white shadow-sm hover:border-slate-800 hover:bg-slate-800 focus-visible:ring-slate-500',
+      'border-teal-500 bg-teal-500 text-white shadow-sm hover:border-teal-700 hover:bg-teal-700 focus-visible:ring-primary-500 active:border-teal-800 active:bg-teal-800',
     outline:
-      'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus-visible:ring-primary-500',
+      'border-slate-300 bg-white text-primary-700 hover:border-slate-400 hover:bg-slate-100 focus-visible:ring-primary-500',
     danger:
-      'border-red-300 bg-red-50 text-red-700 hover:border-red-400 hover:bg-red-100 focus-visible:ring-red-500',
+      'border-red-500 bg-red-500 text-white hover:border-red-700 hover:bg-red-700 focus-visible:ring-red-500',
     light:
       'border-white bg-white text-slate-900 hover:bg-slate-100 focus-visible:ring-slate-300',
     ghost:
-      'border-transparent bg-transparent text-slate-700 hover:bg-slate-100 focus-visible:ring-slate-500',
+      'border-transparent bg-transparent text-primary-700 hover:bg-primary-100 focus-visible:ring-primary-500',
   }
   
   const sizes = {

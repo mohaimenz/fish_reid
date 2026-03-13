@@ -37,7 +37,7 @@ const MapSelector = ({ sites, onSiteSelect }) => {
   }, [sites])
 
   return (
-    <div className="w-full h-[400px] rounded-lg overflow-hidden border border-gray-300">
+    <div className="relative z-0 h-[400px] w-full overflow-hidden rounded-lg border border-primary-200 shadow-[0_8px_18px_rgba(20,105,117,0.08)]">
       <MapContainer
         center={mapCenter}
         zoom={mapZoom}
@@ -66,7 +66,7 @@ const MapSelector = ({ sites, onSiteSelect }) => {
               <div className="text-center">
                 <strong>{site.name}</strong>
                 <br />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-slate-600">
                   {site.lat.toFixed(4)}, {site.long.toFixed(4)}
                 </span>
               </div>

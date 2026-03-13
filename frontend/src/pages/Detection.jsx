@@ -68,10 +68,10 @@ const Detection = () => {
           } else {
             setDetectionResults([])
             setDetections([])
-            setError('No detections found for this session.')
+            setError('No detections were found for this survey.')
           }
         } catch (err) {
-          setError('Failed to load incomplete session.')
+          setError('Could not reopen the unfinished survey review.')
           navigate('/upload')
         } finally {
           setIsLoading(false)
@@ -137,12 +137,12 @@ const Detection = () => {
   const handleRunDetectionAgain = async () => {
     const targetSessionId = routeSessionId || currentSessionId
     if (!targetSessionId) {
-      setError('No workflow session selected.')
+      setError('No survey is currently selected.')
       return
     }
 
     const confirmed = window.confirm(
-      'Running detection again will remove all existing detections, manual annotations, and associated identifications for this session. Do you want to continue?'
+      'Re-running detection will remove the current detections, manual annotations, and identity assignments for this survey. Do you want to continue?'
     )
     if (!confirmed) {
       return
@@ -524,7 +524,7 @@ const Detection = () => {
           <div className="workflow-main flex min-h-[320px] items-center justify-center">
             <div className="text-center">
               <Spinner size="lg" />
-              <p className="mt-4 text-gray-600">Running RabbitFish detection...</p>
+              <p className="mt-4 text-slate-600">Finding rabbitfish in your survey photos...</p>
             </div>
           </div>
         </div>
@@ -541,9 +541,9 @@ const Detection = () => {
         <WorkflowStepper currentStep={2} />
         <div className="workflow-main">
           <div className="w-full">
-          <h1 className="page-title mb-2">RabbitFish Detection</h1>
+          <h1 className="page-title mb-2">Review Detections</h1>
           <p className="page-subtitle mb-8">
-            Review and verify detected RabbitFish instances
+            Check the suggested rabbitfish detections and correct anything that needs a closer look.
           </p>
 
           <div className="mb-6">
@@ -552,7 +552,7 @@ const Detection = () => {
               onClick={handleRunDetectionAgain}
               disabled={isLoading || !(routeSessionId || currentSessionId)}
             >
-              Run Detection Again
+              Re-run Detection
             </Button>
           </div>
 
@@ -568,6 +568,7 @@ const Detection = () => {
               <Card>
                 <Card.Header>
                   <h2 className="text-lg font-semibold">Uploaded Images</h2>
+                  <h2 className="text-lg font-semibold">Survey Photos</h2>
                 </Card.Header>
                 <Card.Body className="space-y-2">
                   {uniqueImagePaths.map((path, index) => (
@@ -577,14 +578,14 @@ const Detection = () => {
                       className={`
                         p-2 rounded-lg cursor-pointer transition-colors
                         ${index === selectedImageIndex 
-                          ? 'bg-primary-100 border-2 border-primary-500' 
-                          : 'bg-gray-100 hover:bg-gray-200'
+                          ? 'border-2 border-primary-500 bg-primary-50 shadow-[0_6px_16px_rgba(20,105,117,0.12)]' 
+                          : 'bg-primary-50/40 hover:bg-primary-50/75'
                         }
                       `}
                     >
-                      <p className="text-sm font-medium">Image {index + 1}</p>
-                      <p className="text-xs text-gray-600">
-                        {detections[index]?.filter(d => d.class_name === 0).length || 0} detection(s)
+                      <p className="text-sm font-medium">Photo {index + 1}</p>
+                      <p className="text-xs text-slate-600">
+                        {detections[index]?.filter(d => d.class_name === 0).length || 0} marked fish
                       </p>
                     </div>
                   ))}
@@ -597,7 +598,7 @@ const Detection = () => {
               <Card>
                 <Card.Header>
                   <h2 className="text-lg font-semibold">
-                    Image {selectedImageIndex + 1} - Detections
+                    Photo {selectedImageIndex + 1} - Review
                   </h2>
                 </Card.Header>
                 <Card.Body>
@@ -611,17 +612,17 @@ const Detection = () => {
                       }}
                       disabled={tempAnnotation !== null || !getCurrentImageResult()}
                     >
-                      {isDrawingMode ? 'Drawing Mode Enabled' : 'Draw Annotation'}
+                      {isDrawingMode ? 'Drawing Mode On' : 'Draw a Box'}
                     </Button>
                     {isDrawingMode && (
-                      <span className="ml-3 text-sm text-gray-600">
-                        Click and drag on the image to draw a bounding box
+                      <span className="ml-3 text-sm text-slate-600">
+                        Click and drag on the image to mark a fish manually
                       </span>
                     )}
                   </div>
 
                   {/* Main Image with Bounding Boxes */}
-                  <div ref={containerRef} className="bg-gray-900 rounded-lg mb-6 relative">
+                  <div ref={containerRef} className="relative mb-6 rounded-lg bg-[linear-gradient(180deg,#0f5f69_0%,#114a55_100%)]">
                     {/* Delete Image Button */}
                     {getCurrentImageResult() && (
                       <button
@@ -677,15 +678,15 @@ const Detection = () => {
                       </>
                     ) : (
                       <div className="aspect-video flex items-center justify-center">
-                        <p className="text-white">No detections available for this session.</p>
+                        <p className="text-white">No detections are available for this survey.</p>
                       </div>
                     )}
                   </div>
 
                   {/* Detection Summary */}
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">{currentDetections.filter(d => d.class_name === 0).length}</span> RabbitFish detected in this image
+                  <div className="rounded-lg border border-primary-100 bg-primary-50/45 p-4">
+                    <p className="text-sm text-slate-700">
+                      <span className="font-semibold">{currentDetections.filter(d => d.class_name === 0).length}</span> rabbitfish marked in this photo
                     </p>
                   </div>
                 </Card.Body>
@@ -697,7 +698,7 @@ const Detection = () => {
                   variant="outline"
                   onClick={handleBackToUpload}
                 >
-                  Back to Upload
+                  Back to Survey Setup
                 </Button>
                 <Button
                   variant="primary"
@@ -705,7 +706,7 @@ const Detection = () => {
                   onClick={handleNext}
                   disabled={detections.flat().length === 0}
                 >
-                  Go to Identification
+                  Continue to Identity Review
                 </Button>
               </div>
             </div>

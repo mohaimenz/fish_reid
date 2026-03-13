@@ -10,7 +10,7 @@ const Spinner = ({ size = 'md', className = '' }) => {
       <div
         className={`
           ${sizes[size]}
-          border-[3px] border-slate-200 border-t-primary-600
+          border-[3px] border-slate-200 border-t-primary-500
           rounded-full animate-spin
         `}
       />

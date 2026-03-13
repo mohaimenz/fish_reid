@@ -212,12 +212,12 @@ const PhotoUpload = () => {
       const response = await workflowService.createSession({ siteId: selectedSiteId || null })
       const newSessionId = response?.session_id
       if (!newSessionId) {
-        throw new Error('Session was created but no session ID was returned.')
+        throw new Error('The survey was created, but no survey ID was returned.')
       }
       setCurrentSessionId(newSessionId)
       await refreshSessionHistory()
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to create session.')
+      setError(err.response?.data?.message || err.message || 'Could not start a new survey.')
     } finally {
       setIsCreatingSession(false)
     }
@@ -255,7 +255,7 @@ const PhotoUpload = () => {
   }
 
   const handleDiscardSession = async (sessionId) => {
-    if (!window.confirm('Are you sure you want to discard unfinished work for this session?')) {
+    if (!window.confirm('Clear the unfinished review work for this survey? This will remove unconfirmed annotations.')) {
       return
     }
     
@@ -274,7 +274,7 @@ const PhotoUpload = () => {
       setPreviews([])
       await refreshSessionHistory()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to discard session. Please try again.')
+      setError(err.response?.data?.message || 'Could not clear the unfinished survey work. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -286,15 +286,15 @@ const PhotoUpload = () => {
         <WorkflowStepper currentStep={1} />
         <div className="workflow-main">
           <div className="w-full">
-          <h1 className="page-title mb-2">Photo Upload</h1>
+          <h1 className="page-title mb-2">Start a Survey</h1>
           <p className="page-subtitle mb-8">
-            Upload underwater images and provide location metadata
+            Bring in survey photos, choose the site, and set the time of observation.
           </p>
 
-          <Card className="mb-6 bg-blue-50 border-blue-200">
+          <Card className="mb-6 border-primary-200 bg-[linear-gradient(135deg,rgba(235,251,249,0.98)_0%,rgba(244,255,252,0.95)_100%)]">
             <Card.Header>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-blue-900">Session History</h3>
+                <h3 className="text-lg font-semibold text-primary-900">Recent Surveys</h3>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -310,35 +310,35 @@ const PhotoUpload = () => {
                     onClick={handleCreateSession}
                     disabled={isCreatingSession}
                   >
-                    {isCreatingSession ? 'Creating...' : 'Create New Session'}
+                    {isCreatingSession ? 'Starting...' : 'Start New Survey'}
                   </Button>
                 </div>
               </div>
             </Card.Header>
             <Card.Body>
               {currentSessionId && (
-                <p className="text-sm text-blue-700 mb-4">
-                  Active upload session: <span className="font-semibold">{currentSessionId}</span>
+                <p className="mb-4 text-sm text-primary-800">
+                  Current survey: <span className="font-semibold">{currentSessionId}</span>
                 </p>
               )}
               {isLoadingSessions ? (
-                <p className="text-sm text-blue-700">Loading sessions...</p>
+                <p className="text-sm text-primary-800">Loading surveys...</p>
               ) : sessionHistory.length === 0 ? (
-                <p className="text-sm text-blue-700">No previous sessions found. Upload images to auto-create one.</p>
+                <p className="text-sm text-primary-800">No surveys yet. Start one here and your uploads will stay grouped together.</p>
               ) : (
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {sessionHistory.map((session) => (
-                    <div key={session.id} className="rounded-lg border border-blue-200 bg-white p-3">
+                    <div key={session.id} className="rounded-xl border border-primary-200 bg-white/96 p-3 shadow-[0_8px_18px_rgba(20,105,117,0.05)]">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {session.name || `Session ${session.id.slice(-6)}`}
+                          <p className="text-sm font-semibold text-slate-900">
+                            {session.name || `Survey ${session.id.slice(-6)}`}
                           </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            Status: {session.status} | Step: {session.current_step}
+                          <p className="mt-1 text-xs text-slate-600">
+                            Status: {session.status} | Stage: {session.current_step}
                           </p>
-                          <p className="text-xs text-gray-600">
-                            Uploads: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Unfinished: {session.stats?.unfinished_count || 0}
+                          <p className="text-xs text-slate-600">
+                            Photos: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Awaiting review: {session.stats?.unfinished_count || 0}
                           </p>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -348,7 +348,7 @@ const PhotoUpload = () => {
                             onClick={() => handleUseSessionForUpload(session.id)}
                             disabled={isSubmitting}
                           >
-                            Use for Upload
+                            Use This Survey
                           </Button>
                           <Button
                             variant="secondary"
@@ -357,7 +357,7 @@ const PhotoUpload = () => {
                             disabled={isSubmitting}
                             icon={<PlayCircle size={14} />}
                           >
-                            Resume
+                            Continue Review
                           </Button>
                           {session.status === 'in_progress' && (session.stats?.unfinished_count || 0) > 0 && (
                             <Button
@@ -366,7 +366,7 @@ const PhotoUpload = () => {
                               onClick={() => handleDiscardSession(session.id)}
                               disabled={isSubmitting}
                             >
-                              Discard
+                              Clear Unfinished Work
                             </Button>
                           )}
                         </div>
@@ -389,10 +389,10 @@ const PhotoUpload = () => {
             <div>
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-semibold">Upload Images</h2>
+                  <h2 className="text-lg font-semibold">Survey Photos</h2>
                 </Card.Header>
                 <Card.Body>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-500 transition-colors cursor-pointer">
+                  <div className="cursor-pointer rounded-xl border-2 border-dashed border-primary-200 bg-primary-50/35 p-8 text-center transition-colors hover:border-primary-400 hover:bg-primary-50/60">
                     <input
                       type="file"
                       multiple
@@ -402,11 +402,11 @@ const PhotoUpload = () => {
                       id="file-upload"
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
-                      <UploadIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-700 font-medium mb-2">
-                        Click to upload or drag and drop
+                      <UploadIcon className="mx-auto mb-4 h-12 w-12 text-primary-500" />
+                      <p className="mb-2 font-medium text-slate-800">
+                        Click to choose photos or drag them here
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-slate-600">
                         PNG, JPG or JPEG (no size limit)
                       </p>
                     </label>
@@ -440,14 +440,14 @@ const PhotoUpload = () => {
             <div>
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-semibold">Location & Time</h2>
+                  <h2 className="text-lg font-semibold">Site and Timing</h2>
                 </Card.Header>
                 <Card.Body className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-700">Select a site on the map to auto-fill coordinates.</p>
+                      <p className="text-sm text-slate-700">Choose a site on the map to fill the coordinates automatically.</p>
                       {selectedSiteId && (
-                        <p className="text-xs text-gray-500 mt-1">Site selected and coordinates populated.</p>
+                        <p className="mt-1 text-xs text-primary-700">Site selected and coordinates added.</p>
                       )}
                     </div>
                     <Button
@@ -463,14 +463,14 @@ const PhotoUpload = () => {
                   {/* Map Section */}
                   <div className="mb-4">
                     {isLoadingSites ? (
-                      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
-                        <p className="text-gray-500">Loading sites...</p>
+                      <div className="flex h-[400px] items-center justify-center rounded-lg bg-primary-50/60">
+                        <p className="text-slate-600">Loading sites...</p>
                       </div>
                     ) : sites.length > 0 ? (
                       <MapSelector sites={sites} onSiteSelect={handleSiteSelect} />
                     ) : (
-                      <div className="h-[400px] bg-gray-100 rounded-lg flex items-center justify-center border border-gray-300">
-                        <p className="text-gray-500">No sites available. Please contact admin.</p>
+                      <div className="flex h-[400px] items-center justify-center rounded-lg border border-primary-200 bg-primary-50/60">
+                        <p className="text-slate-600">No sites are available yet. Ask an administrator to add one.</p>
                       </div>
                     )}
                   </div>
@@ -517,7 +517,7 @@ const PhotoUpload = () => {
               onClick={handleSubmit}
               disabled={isSubmitting || images.length === 0}
             >
-              {isSubmitting ? 'Uploading...' : 'Go to Detection'}
+              {isSubmitting ? 'Uploading...' : 'Continue to Detection Review'}
             </Button>
           </div>
         </div>
@@ -525,12 +525,12 @@ const PhotoUpload = () => {
       </div>
       {isAddSiteOpen && (
         <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Add Site</h3>
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-primary-100 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-900">Add Site</h3>
               <button
                 onClick={resetSiteModal}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-slate-500 hover:text-slate-700"
               >
                 <X size={18} />
               </button>
@@ -564,7 +564,7 @@ const PhotoUpload = () => {
                 <Alert type="error">{siteFormError}</Alert>
               )}
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 border-t border-primary-100 px-6 py-4">
               <Button variant="ghost" onClick={resetSiteModal} disabled={isCreatingSite}>
                 Cancel
               </Button>

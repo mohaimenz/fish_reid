@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="RabbitFish Tracker">
+  <defs>
+    <linearGradient id="reefBg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#1aa79f" />
+      <stop offset="100%" stop-color="#0f6c76" />
+    </linearGradient>
+    <linearGradient id="reefFish" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd6ad" />
+      <stop offset="100%" stop-color="#f27b5f" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#reefBg)" />
+  <path
+    d="M17 33c0-7.6 6.5-14 15-14 5.3 0 10.1 2.4 13 6.1l6-2.4-2.3 6.2c.5 1.3.8 2.7.8 4.1 0 7.7-6.5 14-15 14-5.3 0-10.2-2.4-13-6.2L14 43l2.7-6.6c-.4-1-.7-2.2-.7-3.4Z"
+    fill="url(#reefFish)"
+  />
+  <circle cx="28" cy="29" r="2.6" fill="#103844" />
+  <path
+    d="M45 26.5c2.5 1.4 4 3.7 4 6.5s-1.5 5.1-4 6.5"
+    fill="none"
+    stroke="#fff4e8"
+    stroke-linecap="round"
+    stroke-width="2.8"
+  />
+</svg>
