@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowRight, Eye, Fish, Layers, MapIcon, ShieldCheck, Sparkles } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import rabbitfishBanner from '../photos/rabbitfish-banner.jpg'
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -38,17 +39,23 @@ const LandingPage = () => {
   return (
     <div className="page-shell pt-10 md:pt-14">
       <div className="page-container space-y-10">
-        <section className="grid items-stretch gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="overflow-hidden bg-slate-900 text-white shadow-[0_16px_28px_rgba(15,23,42,0.24)]">
-            <Card.Body className="p-8 md:p-10">
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
+        <section className="grid items-stretch gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          <Card className="relative min-h-[24rem] overflow-hidden border-slate-900 bg-slate-950 text-white shadow-[0_16px_28px_rgba(15,23,42,0.24)]">
+            <img
+              src={rabbitfishBanner}
+              alt="Rabbitfish in reef habitat"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/72 to-slate-900/35" />
+            <Card.Body className="relative z-10 flex h-full flex-col justify-end p-8 md:p-10">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-900/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-100">
                 <Sparkles size={14} />
                 Marine Intelligence Platform
               </div>
-              <h1 className="mt-5 text-4xl font-bold leading-tight text-white md:text-5xl">
-                Professional RabbitFish Tracking for Research Teams
+              <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl">
+                RabbitFish Tracking Platform
               </h1>
-              <p className="mt-4 max-w-2xl text-sm text-slate-300 md:text-base">
+              <p className="mt-4 max-w-2xl text-sm text-slate-200 md:text-base">
                 Build longitudinal fish histories from field imagery through a streamlined workflow:
                 upload, detect, identify, then inspect movement over time.
               </p>
@@ -65,6 +72,7 @@ const LandingPage = () => {
                   size="lg"
                   variant="secondary"
                   onClick={() => navigate('/how-it-works')}
+                  className="border-slate-300/60 bg-slate-900/70 text-white hover:border-slate-200 hover:bg-slate-800"
                 >
                   How It Works
                 </Button>
