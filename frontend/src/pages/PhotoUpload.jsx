@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Calendar, Upload as UploadIcon, X, PlayCircle, Plus } from 'lucide-react'
 import WorkflowStepper from '../components/WorkflowStepper'
@@ -7,11 +7,13 @@ import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import Alert from '../components/ui/Alert'
 import MapSelector from '../components/MapSelector'
+import useAuthStore from '../store/authStore'
 import useWorkflowStore from '../store/workflowStore'
 import workflowService from '../services/workflowService'
 
 const PhotoUpload = () => {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const {
     images,
     metadata,
@@ -35,6 +37,55 @@ const PhotoUpload = () => {
   const [newSiteData, setNewSiteData] = useState({ name: '', lat: '', long: '' })
   const [isCreatingSite, setIsCreatingSite] = useState(false)
   const [siteFormError, setSiteFormError] = useState('')
+
+  const currentUserId = useMemo(() => {
+    if (!user) return null
+    if (typeof user === 'object') {
+      return user.id || user._id || user.user_id || null
+    }
+    if (typeof user === 'string') {
+      try {
+        const parsedUser = JSON.parse(user.replace(/'/g, '"'))
+        return parsedUser?.id || parsedUser?._id || parsedUser?.user_id || null
+      } catch {
+        return null
+      }
+    }
+    return null
+  }, [user])
+
+  const recentSurveys = useMemo(() => {
+    const normalizedSessions = Array.isArray(sessionHistory) ? sessionHistory : []
+    const sessionsForCurrentUser = normalizedSessions.filter((session) => {
+      const sessionUserId = session?.user_id || session?.userId || session?.owner_id || session?.ownerId
+      if (!sessionUserId || !currentUserId) {
+        return true
+      }
+      return String(sessionUserId) === String(currentUserId)
+    })
+
+    const getSessionTimestamp = (session) => {
+      const rawTimestamp = session?.date_modified || session?.date_created || session?.date_completed || null
+      if (!rawTimestamp) return 0
+      const parsedTimestamp = new Date(rawTimestamp).getTime()
+      return Number.isNaN(parsedTimestamp) ? 0 : parsedTimestamp
+    }
+
+    const getPriorityRank = (session) => {
+      const unfinishedCount = Number(session?.stats?.unfinished_count || 0)
+      if (unfinishedCount > 0) return 0
+      if (session?.status === 'in_progress') return 1
+      return 2
+    }
+
+    return [...sessionsForCurrentUser]
+      .sort((left, right) => {
+        const priorityDifference = getPriorityRank(left) - getPriorityRank(right)
+        if (priorityDifference !== 0) return priorityDifference
+        return getSessionTimestamp(right) - getSessionTimestamp(left)
+      })
+      .slice(0, 3)
+  }, [currentUserId, sessionHistory])
 
   const refreshSessionHistory = async () => {
     try {
@@ -323,11 +374,11 @@ const PhotoUpload = () => {
               )}
               {isLoadingSessions ? (
                 <p className="text-sm text-primary-800">Loading surveys...</p>
-              ) : sessionHistory.length === 0 ? (
+              ) : recentSurveys.length === 0 ? (
                 <p className="text-sm text-primary-800">No surveys yet. Start one here and your uploads will stay grouped together.</p>
               ) : (
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                  {sessionHistory.map((session) => (
+                  {recentSurveys.map((session) => (
                     <div key={session.id} className="rounded-xl border border-primary-200 bg-white/96 p-3 shadow-[0_8px_18px_rgba(20,105,117,0.05)]">
                       <div className="flex items-start justify-between gap-3">
                         <div>
