@@ -19,11 +19,56 @@ The backend is responsible for:
 - Registering and authenticating users
 - Storing uploaded survey images
 - Managing workflow sessions and sites
-- Running rabbitfish detection
-- Persisting annotations
-- Generating and storing embeddings for identity matching
+- Running rabbitfish detection using YOLOv11
+- Persisting annotations and bounding boxes
+- Generating and storing embeddings for identity matching using fine-tuned FaceNet
 - Recording identification decisions and pair relationships
-- Returning tracking history for identified fish
+- Returning tracking and pairing views for identified fish
+- Providing visualization tools (GradCAM, enhanced crops) for model interpretability
+
+---
+
+## ML Pipeline
+
+### Detection Model
+
+**Model:** YOLOv11 Nano (Fine-tuned)
+
+The detection stage uses a fine-tuned YOLOv11 Nano model to locate rabbitfish in underwater survey images.
+
+- **Model file:** `ai_models/yolo-v11-n-4.pt`
+- **Configuration:** `ai_models/config.yaml`
+- **Framework:** Ultralytics YOLO
+- **Input:** Underwater reef survey photos
+- **Output:** Bounding boxes with confidence scores
+
+**Data Preparation:**
+- Survey photos are annotated using [yolo_annotator](https://github.com/mohaimenz/yolo_annotator)
+- Annotations are converted to YOLO format before fine-tuning
+
+**Note:** The fine-tuning pipeline is not included in this repository.
+
+### Identification Model
+
+**Model:** Fine-tuned FaceNet with ResNet50 Backbone
+
+The identification stage generates embeddings for each detected fish crop and compares them against known individuals to suggest identity matches.
+
+- **Model directory:** `ai_models/facenet_partial_integration/`
+- **Model file:** `facenet_partial_state_dict.pth`
+- **Configuration:** `facenet_partial_integration/threshold.yaml`
+- **Framework:** PyTorch
+- **Backbone:** ResNet50
+- **Output:** 128-dimensional embedding vectors for identity matching
+
+**Image Enhancement Techniques:**
+- **GradCAM:** Generates visual attention maps for model interpretability (endpoint: `/identify/gradcam`)
+- **CLAHE (Contrast Limited Adaptive Histogram Equalization):** Enhances local contrast to improve recognition in variable underwater lighting
+- **Grayscale Conversion:** Reduces color noise in challenging lighting conditions
+
+**Note:** The fine-tuning pipeline is not included in this repository.
+
+---
 
 ## Start Here
 
@@ -31,7 +76,7 @@ The backend is responsible for:
 
 - Python 3.10+ is recommended
 - MongoDB running locally on `mongodb://localhost:27017/`
-- The model files already present in [`ai_models`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/ai_models)
+- The model files already present in `ai_models/`
 
 ### Install
 
@@ -54,7 +99,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Create or update the auth secret file at [`data_access/.env`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/data_access/.env):
+4. Create or update the auth secret file at `data_access/.env`:
 
 ```env
 API_TOKEN_KEY=replace-with-a-long-random-secret
@@ -76,10 +121,11 @@ Interactive docs will then be available at:
 Several parts of the code use relative paths:
 
 - JWT configuration is loaded from `api/data_access/.env`
-- uploaded files are stored under `uploads/`
-- generated crops and visualizations are also stored under `uploads/`
+- Uploaded files are stored under `uploads/`
+- Generated crops and visualizations are also stored under `uploads/`
+- Model files are loaded from `ai_models/`
 
-Because of that, the safest way to run the API is from inside the [`api`](/Users/aasa0007/Python/RabbitFish/fish_reid/api) folder.
+Because of that, the safest way to run the API is from inside the `api` folder.
 
 ## Configuration Assumptions
 
@@ -89,14 +135,15 @@ Current code assumptions are:
 - MongoDB database name is hard-coded to `fish_reid`
 - CORS currently allows `http://localhost:3000` and `http://127.0.0.1:3000`
 - Uploaded files are stored on local disk, not in cloud storage
+- Model files are pre-downloaded and placed in `ai_models/`
 
-If those assumptions need to change, the first place to inspect is [`data_access/access.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/data_access/access.py) and [`main.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/main.py).
+If those assumptions need to change, the first place to inspect is `data_access/access.py` and `main.py`.
 
 ## Route Groups
 
 ### Authentication
 
-Defined in [`routes/user.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/user.py):
+Defined in `routes/user.py`:
 
 - `POST /user/register`
 - `POST /user/login`
@@ -109,7 +156,7 @@ Notes:
 
 ### Photos
 
-Defined in [`routes/photo.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/photo.py):
+Defined in `routes/photo.py`:
 
 - `POST /photo/upload`
 - `GET /photo/get/{photo_id}`
@@ -118,7 +165,7 @@ Uploads are resized and stored on disk under `uploads/<user_id>/<upload_id>.jpg`
 
 ### Sites
 
-Defined in [`routes/site.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/site.py):
+Defined in `routes/site.py`:
 
 - `GET /site/sites`
 - `POST /site/site`
@@ -127,7 +174,7 @@ Sites are reusable map points that can be linked to sessions and uploads.
 
 ### Workflow Sessions
 
-Defined in [`routes/session.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/session.py):
+Defined in `routes/session.py`:
 
 - `POST /session/create`
 - `GET /session/history`
@@ -139,51 +186,51 @@ Sessions are the organizing unit for one survey workflow. They track status, cur
 
 ### Detection
 
-Defined in [`routes/detector.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/detector.py):
+Defined in `routes/detector.py`:
 
-- `POST /detector/detect`
-- `GET /detector/resume-detection`
-- `GET /detector/check-unfinished`
-- `DELETE /detector/discard-previous-unfinished`
-- `DELETE /detector/delete-image`
-- `POST /detector/save-manual-annotation`
-- `DELETE /detector/delete-bbox`
+- `POST /detector/detect` - Runs YOLOv11 detection on uploaded images
+- `GET /detector/resume-detection` - Retrieves detection results for review
+- `GET /detector/check-unfinished` - Checks for incomplete detection workflows
+- `DELETE /detector/discard-previous-unfinished` - Clears incomplete detections
+- `DELETE /detector/delete-image` - Removes an image from detection
+- `POST /detector/save-manual-annotation` - Saves user corrections to detections
+- `DELETE /detector/delete-bbox` - Removes a bounding box
 
-This layer runs YOLO-based detection and supports manual correction workflows.
+This layer runs YOLOv11 detection and supports manual correction workflows.
 
 ### Identification, Pairing, and Tracking
 
-Defined in [`routes/identification.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/routes/identification.py):
+Defined in `routes/identification.py`:
 
-- `POST /identify`
-- `POST /identify/create-identity`
-- `POST /identify/assign`
-- `PATCH /identify/fish/{fish_id}/alias`
-- `POST /identify/visualization`
-- `POST /identify/gradcam`
-- `GET /identify/session/{session_id}`
-- `GET /identify/fish`
-- `GET /pairing/session/{session_id}`
-- `GET /pairing/fish/{fish_id}/history`
-- `POST /pairing/session/{session_id}/assign`
-- `GET /tracking/{fish_id}`
+- `POST /identify` - Generates embeddings and finds identity matches
+- `POST /identify/create-identity` - Creates a new fish identity record
+- `POST /identify/assign` - Assigns a detection to a fish identity
+- `PATCH /identify/fish/{fish_id}/alias` - Updates fish metadata
+- `POST /identify/visualization` - Generates visual comparison of similar fish
+- `POST /identify/gradcam` - Generates GradCAM attention visualization
+- `GET /identify/session/{session_id}` - Retrieves identification results for a session
+- `GET /identify/fish` - Lists all identified fish
+- `GET /pairing/session/{session_id}` - Gets pair relationships from a session
+- `GET /pairing/fish/{fish_id}/history` - Gets pairing history for a fish
+- `POST /pairing/session/{session_id}/assign` - Records a new pair relationship
+- `GET /tracking/{fish_id}` - Gets complete tracking history (sightings, locations, timeline)
 
-This is the heaviest part of the backend. It loads the embedding model, generates or reuses crops, compares embeddings, persists identification logs, and returns tracking and pairing views.
+This is the heaviest part of the backend. It loads the fine-tuned FaceNet model, generates or reuses crops with enhancement filters (CLAHE, grayscale), compares embeddings, persists identification logs, and returns tracking and pairing views.
 
 ## Data Model Overview
 
-The main collections represented in [`data_access/models.py`](/Users/aasa0007/Python/RabbitFish/fish_reid/api/data_access/models.py) are:
+The main collections represented in `data_access/models.py` are:
 
-- `Users`
-- `Sites`
-- `workflow_sessions`
-- `user_uploads`
-- `annotations`
-- `fish`
-- `fish_embeddings`
-- `query_embeddings`
-- `identification_logs`
-- `fish_pair_logs`
+- `Users` - User accounts and authentication
+- `Sites` - Geographic survey locations
+- `workflow_sessions` - Survey workflow instances
+- `user_uploads` - Uploaded photos
+- `annotations` - Bounding boxes and detection results
+- `fish` - Individual fish identity records
+- `fish_embeddings` - Pre-computed embeddings for known fish
+- `query_embeddings` - Query embeddings for matching
+- `identification_logs` - Decisions made during identification review
+- `fish_pair_logs` - Recorded pair relationships
 
 ## Storage Layout
 
@@ -191,7 +238,7 @@ At runtime, local files are written under the API working directory:
 
 - `uploads/<user_id>/` for uploaded photos
 - `uploads/<user_id>/crops/` for cropped detections
-- additional generated visualization assets under `uploads/`
+- Additional generated visualization assets under `uploads/`
 
 The API also mounts `uploads/` as static content at `/uploads`.
 
@@ -199,11 +246,13 @@ The API also mounts `uploads/` as static content at `/uploads`.
 
 The current frontend can work with this API, but only if its environment variables are aligned with the route prefixes above. In particular:
 
-- the frontend base URL should be `http://localhost:8000`
-- auth routes should point at `/user/*`
-- photo routes should point at `/photo/*`
-- detection routes should point at `/detector/*`
-- site routes should point at `/site/*`
+- The frontend base URL should be `http://localhost:8000`
+- Auth routes should point at `/user/*`
+- Photo routes should point at `/photo/*`
+- Detection routes should point at `/detector/*`
+- Site routes should point at `/site/*`
+- Identification routes should point at `/identify/*`
+- Pairing routes should point at `/pairing/*`
 
 ## Known Limitations
 
@@ -211,4 +260,5 @@ The current frontend can work with this API, but only if its environment variabl
 - Auth secret loading uses a fixed file location.
 - There is no backend logout or current-user endpoint.
 - File storage is local-disk only.
-- This codebase assumes the model weights already exist on disk and does not manage model downloads automatically.
+- Model weights are assumed to already exist on disk; no automatic download mechanism.
+- Model training and fine-tuning pipelines are not included in this repository.
