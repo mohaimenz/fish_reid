@@ -1,264 +1,579 @@
-# RabbitFish Tracking Platform API
+# Backend API (FastAPI + ML Inference)
 
-This API is the backend for the RabbitFish workflow. It handles authentication, survey sessions, site management, photo ingestion, detection, re-identification, pair matching, and tracking history.
-
-## Stack
-
-- FastAPI
-- MongoDB
-- PyJWT
-- bcrypt
-- Ultralytics YOLO
-- PyTorch
-- Pillow / NumPy / OpenCV
-
-## What This Service Does
-
-The backend is responsible for:
-
-- Registering and authenticating users
-- Storing uploaded survey images
-- Managing workflow sessions and sites
-- Running rabbitfish detection using YOLOv11
-- Persisting annotations and bounding boxes
-- Generating and storing embeddings for identity matching using fine-tuned FaceNet
-- Recording identification decisions and pair relationships
-- Returning tracking and pairing views for identified fish
-- Providing visualization tools (GradCAM, enhanced crops) for model interpretability
+Backend service responsible for **fish detection, re-identification, and tracking workflows**.
 
 ---
 
-## ML Pipeline
-
-### Detection Model
-
-**Model:** YOLOv11 Nano (Fine-tuned)
-
-The detection stage uses a fine-tuned YOLOv11 Nano model to locate rabbitfish in underwater survey images.
-
-- **Model file:** `ai_models/yolo-v11-n-4.pt`
-- **Configuration:** `ai_models/config.yaml`
-- **Framework:** Ultralytics YOLO
-- **Input:** Underwater reef survey photos
-- **Output:** Bounding boxes with confidence scores
-
-**Data Preparation:**
-- Survey photos are annotated using [yolo_annotator](https://github.com/mohaimenz/yolo_annotator)
-- Annotations are converted to YOLO format before fine-tuning
-
-**Note:** The fine-tuning pipeline is not included in this repository.
-
-### Identification Model
-
-**Model:** Fine-tuned FaceNet with ResNet50 Backbone
-
-The identification stage generates embeddings for each detected fish crop and compares them against known individuals to suggest identity matches.
-
-- **Model directory:** `ai_models/facenet_partial_integration/`
-- **Model file:** `facenet_partial_state_dict.pth`
-- **Configuration:** `facenet_partial_integration/threshold.yaml`
-- **Framework:** PyTorch
-- **Backbone:** ResNet50
-- **Output:** 128-dimensional embedding vectors for identity matching
-
-**Image Enhancement Techniques:**
-- **GradCAM:** Generates visual attention maps for model interpretability (endpoint: `/identify/gradcam`)
-- **CLAHE (Contrast Limited Adaptive Histogram Equalization):** Enhances local contrast to improve recognition in variable underwater lighting
-- **Grayscale Conversion:** Reduces color noise in challenging lighting conditions
-
-**Note:** The fine-tuning pipeline is not included in this repository.
-
----
-
-## Start Here
-
-### Prerequisites
-
-- Python 3.10+ is recommended
-- MongoDB running locally on `mongodb://localhost:27017/`
-- The model files already present in `ai_models/`
-
-### Install
-
-1. Move into the API folder:
+## Quick Start
 
 ```bash
 cd api
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create environment file with secret
+cp data_access/.env.example data_access/.env
+# Edit data_access/.env and replace API_TOKEN_KEY with a random secret
+
+# Ensure MongoDB is running
+# mongod  (in another terminal)
+
+# Start the server
+uvicorn main:app --reload
 ```
 
-2. Create and activate a virtual environment:
+API will be available at: **http://localhost:8000**  
+Interactive docs: **http://localhost:8000/docs** (Swagger UI)
+
+---
+
+## Prerequisites
+
+- **Python 3.10+** (3.11+ recommended)
+- **MongoDB 5.0+** (local or remote)
+- **pip** or **poetry** for dependency management
+- Optional: **GPU** (CUDA 11.8+) for faster inference
+
+---
+
+## Installation
+
+### 1. Create Virtual Environment
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-3. Install dependencies:
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Create or update the auth secret file at `data_access/.env`:
-
-```env
-API_TOKEN_KEY=replace-with-a-long-random-secret
-```
-
-5. Start the server from the `api/` directory:
+### 3. Set Up Environment File
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+cp data_access/.env.example data_access/.env
 ```
 
-Interactive docs will then be available at:
+Edit `data_access/.env`:
 
-- `http://localhost:8000/docs`
-- `http://localhost:8000/redoc`
+```env
+API_TOKEN_KEY=your-very-long-random-secret-key-here-min-32-chars
+```
 
-## Why The Working Directory Matters
+### 4. Verify Model Files
 
-Several parts of the code use relative paths:
+Check that pre-trained models exist:
 
-- JWT configuration is loaded from `api/data_access/.env`
-- Uploaded files are stored under `uploads/`
-- Generated crops and visualizations are also stored under `uploads/`
-- Model files are loaded from `ai_models/`
+```bash
+ls -la ai_models/
+# Should contain:
+#   - yolo-v11-n-4.pt
+#   - config.yaml
+#   - facenet_partial_integration/
+#     ├── facenet_partial_state_dict.pth
+#     ├── model_def.py
+#     ├── threshold.yaml
+#     └── model_meta.json
+```
 
-Because of that, the safest way to run the API is from inside the `api` folder.
+If model files are missing, download them from the project's model repository or contact the team.
 
-## Configuration Assumptions
+### 5. Start MongoDB
 
-Current code assumptions are:
+```bash
+# Option 1: Local MongoDB
+mongod
 
-- MongoDB URI is hard-coded to `mongodb://localhost:27017/`
-- MongoDB database name is hard-coded to `fish_reid`
-- CORS currently allows `http://localhost:3000` and `http://127.0.0.1:3000`
-- Uploaded files are stored on local disk, not in cloud storage
-- Model files are pre-downloaded and placed in `ai_models/`
+# Option 2: If MongoDB is already running
+# (verify with: mongo mongodb://localhost:27017/fish_reid)
+```
 
-If those assumptions need to change, the first place to inspect is `data_access/access.py` and `main.py`.
+### 6. Run the Server
 
-## Route Groups
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-### Authentication
+---
 
-Defined in `routes/user.py`:
+## Overview
 
-- `POST /user/register`
-- `POST /user/login`
+This API provides an end-to-end pipeline for:
 
-Notes:
+* Running object detection on uploaded images
+* Generating embeddings for detected fish
+* Matching identities using similarity search
+* Managing tracking history across sessions
 
-- JWTs are issued at login.
-- There is no dedicated backend `logout` route yet.
-- There is no current `me` endpoint.
+The system integrates ML inference with application logic and persistent storage.
 
-### Photos
 
-Defined in `routes/photo.py`:
 
-- `POST /photo/upload`
-- `GET /photo/get/{photo_id}`
+---
 
-Uploads are resized and stored on disk under `uploads/<user_id>/<upload_id>.jpg`.
-
-### Sites
-
-Defined in `routes/site.py`:
-
-- `GET /site/sites`
-- `POST /site/site`
-
-Sites are reusable map points that can be linked to sessions and uploads.
-
-### Workflow Sessions
-
-Defined in `routes/session.py`:
-
-- `POST /session/create`
-- `GET /session/history`
-- `GET /session/{session_id}`
-- `POST /session/{session_id}/complete`
-- `DELETE /session/{session_id}`
-
-Sessions are the organizing unit for one survey workflow. They track status, current step, associated site, and summary stats.
+## API Endpoints
 
 ### Detection
 
-Defined in `routes/detector.py`:
+**`POST /detector/detect`** — Run YOLOv11 detection on uploaded images
 
-- `POST /detector/detect` - Runs YOLOv11 detection on uploaded images
-- `GET /detector/resume-detection` - Retrieves detection results for review
-- `GET /detector/check-unfinished` - Checks for incomplete detection workflows
-- `DELETE /detector/discard-previous-unfinished` - Clears incomplete detections
-- `DELETE /detector/delete-image` - Removes an image from detection
-- `POST /detector/save-manual-annotation` - Saves user corrections to detections
-- `DELETE /detector/delete-bbox` - Removes a bounding box
+Request:
+```bash
+curl -X POST http://localhost:8000/detector/detect \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "session_id=<session_id>" \
+  -F "photos=@image1.jpg" \
+  -F "photos=@image2.jpg"
+```
 
-This layer runs YOLOv11 detection and supports manual correction workflows.
+Response:
+```json
+{
+  "session_id": "abc123",
+  "detections": [
+    {
+      "photo_id": "photo1",
+      "bboxes": [
+        {"x": 100, "y": 150, "width": 200, "height": 250, "confidence": 0.95}
+      ]
+    }
+  ]
+}
+```
 
-### Identification, Pairing, and Tracking
+**`GET /detector/resume-detection`** — Resume incomplete detection workflow
 
-Defined in `routes/identification.py`:
+```bash
+curl -X GET http://localhost:8000/detector/resume-detection?session_id=abc123 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
-- `POST /identify` - Generates embeddings and finds identity matches
-- `POST /identify/create-identity` - Creates a new fish identity record
-- `POST /identify/assign` - Assigns a detection to a fish identity
-- `PATCH /identify/fish/{fish_id}/alias` - Updates fish metadata
-- `POST /identify/visualization` - Generates visual comparison of similar fish
-- `POST /identify/gradcam` - Generates GradCAM attention visualization
-- `GET /identify/session/{session_id}` - Retrieves identification results for a session
-- `GET /identify/fish` - Lists all identified fish
-- `GET /pairing/session/{session_id}` - Gets pair relationships from a session
-- `GET /pairing/fish/{fish_id}/history` - Gets pairing history for a fish
-- `POST /pairing/session/{session_id}/assign` - Records a new pair relationship
-- `GET /tracking/{fish_id}` - Gets complete tracking history (sightings, locations, timeline)
+**`POST /detector/save-manual-annotation`** — Save researcher-corrected bounding boxes
 
-This is the heaviest part of the backend. It loads the fine-tuned FaceNet model, generates or reuses crops with enhancement filters (CLAHE, grayscale), compares embeddings, persists identification logs, and returns tracking and pairing views.
+```bash
+curl -X POST http://localhost:8000/detector/save-manual-annotation \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "photo_id": "photo1",
+    "bboxes": [
+      {"x": 100, "y": 150, "width": 200, "height": 250}
+    ]
+  }'
+```
 
-## Data Model Overview
+**`DELETE /detector/delete-bbox`** — Remove incorrect detection
 
-The main collections represented in `data_access/models.py` are:
+```bash
+curl -X DELETE http://localhost:8000/detector/delete-bbox?bbox_id=bbox123 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
 
-- `Users` - User accounts and authentication
-- `Sites` - Geographic survey locations
-- `workflow_sessions` - Survey workflow instances
-- `user_uploads` - Uploaded photos
-- `annotations` - Bounding boxes and detection results
-- `fish` - Individual fish identity records
-- `fish_embeddings` - Pre-computed embeddings for known fish
-- `query_embeddings` - Query embeddings for matching
-- `identification_logs` - Decisions made during identification review
-- `fish_pair_logs` - Recorded pair relationships
+---
+
+### Identification
+
+**`POST /identify`** — Generate embeddings and retrieve top matches
+
+```bash
+curl -X POST http://localhost:8000/identify \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "abc123"
+  }'
+```
+
+Response:
+```json
+{
+  "matches": [
+    {
+      "annotation_id": "ann1",
+      "candidates": [
+        {
+          "fish_id": "fish_001",
+          "similarity": 0.92,
+          "photo_count": 15
+        },
+        {
+          "fish_id": "fish_002",
+          "similarity": 0.85,
+          "photo_count": 8
+        },
+        {
+          "fish_id": "fish_003",
+          "similarity": 0.78,
+          "photo_count": 3
+        }
+      ]
+    }
+  ]
+}
+```
+
+**`POST /identify/assign`** — Assign detection to fish identity
+
+```bash
+curl -X POST http://localhost:8000/identify/assign \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "annotation_id": "ann1",
+    "fish_id": "fish_001",
+    "confidence": 0.92
+  }'
+```
+
+**`POST /identify/create-identity`** — Create new fish identity
+
+```bash
+curl -X POST http://localhost:8000/identify/create-identity \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "annotation_id": "ann1",
+    "alias": "BigFish_Site1"
+  }'
+```
+
+---
+
+### Visualization
+
+**`POST /identify/gradcam`** — Generate GradCAM attention visualization
+
+```bash
+curl -X POST http://localhost:8000/identify/gradcam \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "photo_id": "photo1"
+  }'
+```
+
+Returns attention map visualization showing which image regions the FaceNet model focused on.
+
+**`POST /identify/visualization`** — Generate visual comparison of candidate matches
+
+```bash
+curl -X POST http://localhost:8000/identify/visualization \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "annotation_id": "ann1",
+    "fish_id": "fish_001"
+  }'
+```
+
+---
+
+### Tracking & Pairing
+
+**`GET /tracking/{fish_id}`** — Retrieve complete sighting history
+
+```bash
+curl -X GET http://localhost:8000/tracking/fish_001 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+Response:
+```json
+{
+  "fish_id": "fish_001",
+  "alias": "BigFish_Site1",
+  "first_sighting": "2026-03-15",
+  "last_sighting": "2026-03-28",
+  "total_sightings": 42,
+  "sightings": [
+    {
+      "session_id": "session1",
+      "photo_id": "photo1",
+      "date": "2026-03-15",
+      "site": "Reef_A",
+      "coordinates": [153.1234, -27.5678]
+    }
+  ]
+}
+```
+
+**`GET /pairing/fish/{fish_id}/history`** — Retrieve pair relationships
+
+```bash
+curl -X GET http://localhost:8000/pairing/fish/fish_001/history \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**`POST /pairing/session/{session_id}/assign`** — Record pair observation
+
+```bash
+curl -X POST http://localhost:8000/pairing/session/session1/assign \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fish_1_id": "fish_001",
+    "fish_2_id": "fish_002"
+  }'
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+Set in `data_access/.env`:
+
+```env
+API_TOKEN_KEY=<your-secret-key>
+```
+
+### Database Configuration
+
+Current settings (in `data_access/access.py`):
+- MongoDB URI: `mongodb://localhost:27017`
+- Database name: `fish_reid`
+
+To change, edit `data_access/access.py`:
+
+```python
+MONGO_URI = "mongodb://your-server:27017"
+DATABASE_NAME = "fish_reid"
+```
+
+### Model Configuration
+
+Detection thresholds: `ai_models/config.yaml`
+```yaml
+confidence_threshold: 0.5
+iou_threshold: 0.4
+```
+
+Identification thresholds: `ai_models/facenet_partial_integration/threshold.yaml`
+```yaml
+similarity_threshold: 0.6
+top_k_matches: 3
+```
+
+### CORS Settings
+
+Frontend access (in `main.py`):
+```python
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+```
+
+To add more origins:
+```python
+ALLOWED_ORIGINS.append("http://your-frontend-url")
+```
+
+---
+
+## Performance Tuning
+
+### Faster Inference
+
+- **Enable GPU:** Install CUDA drivers; PyTorch auto-detects
+- **Batch Processing:** Process multiple images at once in `/detector/detect`
+- **Embedding Caching:** Embeddings are cached; re-use when possible
+- **Model Quantization:** YOLOv11 Nano is already lightweight
+
+### Memory Optimization
+
+- Reduce batch size in detection if GPU memory is limited
+- Implement embedding pagination for large datasets
+- Archive old sessions to separate collection
+
+### Database Performance
+
+Ensure MongoDB indexes on frequently queried fields:
+```javascript
+// In MongoDB shell
+db.annotations.createIndex({ "session_id": 1 })
+db.fish_embeddings.createIndex({ "fish_id": 1 })
+db.identification_logs.createIndex({ "session_id": 1, "created_at": -1 })
+```
+
+
+
+---
+
+## Architecture
+
+```
+Frontend (React)
+    ↓
+FastAPI Backend
+    ↓
+ML Inference Layer
+├── YOLOv11 (Detection)
+├── FaceNet (Re-ID)
+└── Preprocessing (CLAHE, Grayscale, GradCAM)
+    ↓
+MongoDB + File Storage
+```
+
+---
+
+## ML Inference Pipeline
+
+### Detection
+
+```
+Image → YOLOv11 Nano → Bounding Boxes + Confidence
+```
+
+- **Model:** YOLOv11 Nano (fine-tuned on rabbitfish dataset)
+- **Input:** Underwater survey photos (any resolution)
+- **Output:** Bounding boxes with confidence scores
+- **Performance:** ~100-500ms per image on CPU
+
+### Identification
+
+```
+Cropped Fish → CLAHE + Grayscale → FaceNet (ResNet50) → Embedding (128-d)
+                                          ↓
+                                   Similarity Search
+```
+
+- **Model:** FaceNet with ResNet50 backbone (fine-tuned)
+- **Input:** Cropped fish images from detections
+- **Output:** 128-dimensional embedding vectors
+- **Similarity Metric:** Cosine distance
+- **Performance:** ~50-100ms per embedding on CPU
+
+### Preprocessing Techniques
+
+- **CLAHE:** Contrast Limited Adaptive Histogram Equalization (improves details in low-light)
+- **Grayscale:** Reduces color variability in different lighting conditions
+- **GradCAM:** Generates attention maps showing which regions the model focused on
+
+---
+
+## Data Model
+
+### MongoDB Collections
+
+| Collection | Purpose |
+| --- | --- |
+| `users` | User accounts and authentication |
+| `workflow_sessions` | Survey session metadata |
+| `user_uploads` | Uploaded photos |
+| `annotations` | Bounding boxes from detections |
+| `fish` | Individual fish identity records |
+| `fish_embeddings` | Pre-computed embeddings for identities |
+| `query_embeddings` | Query embeddings from current session |
+| `identification_logs` | Decision logs (who assigned what identity when) |
+| `fish_pair_logs` | Recorded pair relationships |
+
+---
 
 ## Storage Layout
 
-At runtime, local files are written under the API working directory:
+```
+uploads/
+├── <user_id>/
+│   ├── <photo_id>.jpg          # Original uploaded photo
+│   └── crops/
+│       └── <annotation_id>.jpg  # Cropped fish image
+```
 
-- `uploads/<user_id>/` for uploaded photos
-- `uploads/<user_id>/crops/` for cropped detections
-- Additional generated visualization assets under `uploads/`
+All files are also served as static content at `/uploads/`.
 
-The API also mounts `uploads/` as static content at `/uploads`.
+---
 
-## Frontend Compatibility Notes
+## Troubleshooting
 
-The current frontend can work with this API, but only if its environment variables are aligned with the route prefixes above. In particular:
+### Startup Issues
 
-- The frontend base URL should be `http://localhost:8000`
-- Auth routes should point at `/user/*`
-- Photo routes should point at `/photo/*`
-- Detection routes should point at `/detector/*`
-- Site routes should point at `/site/*`
-- Identification routes should point at `/identify/*`
-- Pairing routes should point at `/pairing/*`
+**"ModuleNotFoundError: No module named 'ultralytics'"**
+```bash
+pip install ultralytics torch torchvision
+```
 
-## Known Limitations
+**"MongoDB connection failed"**
+- Ensure MongoDB is running: `mongod` or check connection URI in code
+- Verify URI: `mongodb://localhost:27017`
 
-- Database connection settings are not yet environment-driven.
-- Auth secret loading uses a fixed file location.
-- There is no backend logout or current-user endpoint.
-- File storage is local-disk only.
-- Model weights are assumed to already exist on disk; no automatic download mechanism.
-- Model training and fine-tuning pipelines are not included in this repository.
+**"CUDA out of memory"**
+- Reduce detection batch size in `config.yaml`
+- Or use CPU: `CUDA_VISIBLE_DEVICES="" python main.py`
+
+### API Issues
+
+**"401 Unauthorized"**
+- Verify JWT token is included in `Authorization: Bearer <token>` header
+- Check token hasn't expired
+
+**"413 Payload too large"**
+- Default max file size is 50 MB
+- Adjust in FastAPI if needed
+
+**"No detections returned"**
+- Check image resolution (very small images < 100px may fail)
+- Check confidence threshold in `config.yaml`
+- Verify model file is not corrupted
+
+### Model Issues
+
+**"Embeddings not matching expected fish"**
+- May need to retrain FaceNet on your specific dataset
+- Adjust similarity threshold in `threshold.yaml`
+
+**"GradCAM returns blank**
+- Some images may not have clear fish (garbage in, garbage out)
+- Try another image
+
+---
+
+## Performance Notes
+
+- **Detection:** YOLOv11 Nano is 80% faster than YOLOv8 with similar accuracy
+- **Embeddings:** FaceNet 128-dimensional embeddings are fast to compute and store
+- **Scaling:** For >10,000 embeddings, consider GPU inference or batch processing
+- **Database:** MongoDB can handle millions of embeddings with proper indexing
+
+---
+
+## Component Restrictions
+
+The following are **intentionally not included**:
+
+### Model Training Pipelines
+- YOLOv11 retraining code not included
+- FaceNet fine-tuning code not included
+- Data annotation pipeline not included
+
+### Deployment Infrastructure
+- CI/CD pipelines not included
+- Docker configurations not included
+- Kubernetes manifests not included
+- AWS/cloud deployment code not included
+
+---
+
+## Related Documentation
+
+- **Main README:** [../README.md](../README.md)
+- **Frontend Setup:** [../frontend/README.md](../frontend/README.md)
+- **Product Requirements:** [../PRD.md](../PRD.md)
+
+---
+
+## Notes
+
+* Designed for single-node deployment (can be extended to distributed)
+* Lightweight models chosen for efficiency on typical research hardware
+* All decisions are logged and reversible
+* Suitable for research teams with 100-1000s of fish identities
