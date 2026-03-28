@@ -67,7 +67,7 @@ Result: faster processing, consistent identity tracking, and traceable decisions
 
 ## Demo
 
-🎥 Screen recording coming soon
+🎥 [Watch the demo video](https://www.youtube.com/watch?v=pWxlk51-I_E)
 
 ---
 
