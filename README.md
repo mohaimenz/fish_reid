@@ -67,7 +67,7 @@ Result: faster processing, consistent identity tracking, and traceable decisions
 
 ## Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/pWxlk51-I_E" title="RabbitFish Tracking Platform Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![RabbitFish Tracking Platform Demo](https://img.youtube.com/vi/pWxlk51-I_E/maxresdefault.jpg)](https://www.youtube.com/watch?v=pWxlk51-I_E)
 
 ---
 
