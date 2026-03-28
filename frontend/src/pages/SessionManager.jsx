@@ -28,7 +28,7 @@ const SessionManager = () => {
       const response = await workflowService.getSessionHistory()
       setSessionHistory(response?.sessions || [])
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not load the surveys.')
+      setError(err.response?.data?.message || 'Could not load the workflows.')
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +63,7 @@ const SessionManager = () => {
 
   const handleDeleteSession = async (sessionId) => {
     const shouldDelete = window.confirm(
-      'Delete this survey and all related photos, annotations, and identity decisions? This cannot be undone.'
+      'Delete this workflow and all related photos, annotations, and identity decisions? This cannot be undone.'
     )
     if (!shouldDelete) return
 
@@ -76,7 +76,7 @@ const SessionManager = () => {
       }
       await loadSessions()
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not delete the survey.')
+      setError(err.response?.data?.message || 'Could not delete the workflow.')
     } finally {
       setIsDeleting(false)
     }
@@ -87,9 +87,9 @@ const SessionManager = () => {
       <div className="page-container">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Manage Surveys</h1>
+            <h1 className="page-title">Manage Workflows</h1>
             <p className="page-subtitle">
-              Open an existing survey or remove one that should no longer be kept.
+              Open an existing workflow or remove one that should no longer be kept.
             </p>
           </div>
           <Button
@@ -115,7 +115,7 @@ const SessionManager = () => {
         ) : sessionHistory.length === 0 ? (
           <Card className="border-primary-100 bg-primary-50/40">
             <Card.Body>
-              <p className="text-slate-700">No surveys found yet.</p>
+              <p className="text-slate-700">No workflows found yet.</p>
             </Card.Body>
           </Card>
         ) : (
@@ -126,7 +126,7 @@ const SessionManager = () => {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="font-semibold text-slate-900">
-                        {session.name || `Survey ${session.id.slice(-6)}`}
+                        {session.name || `Workflow ${session.id.slice(-6)}`}
                       </p>
                       <p className="mt-1 text-sm text-slate-600">
                         Status: {session.status} | Stage: {session.current_step}
@@ -134,7 +134,7 @@ const SessionManager = () => {
                       <p className="mt-1 text-sm text-slate-600">
                         Photos: {session.stats?.uploads_count || 0} | Annotations: {session.stats?.annotations_count || 0} | Confirmed IDs: {session.stats?.identified_count || 0}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">Survey ID: {session.id}</p>
+                      <p className="mt-1 text-xs text-slate-500">Workflow ID: {session.id}</p>
                     </div>
 
                     <div className="flex gap-2">
@@ -144,7 +144,7 @@ const SessionManager = () => {
                         disabled={isDeleting}
                         icon={<FolderOpen size={16} />}
                       >
-                        Open Survey
+                        Open Workflow
                       </Button>
                       <Button
                         variant="danger"
@@ -152,7 +152,7 @@ const SessionManager = () => {
                         disabled={isDeleting}
                         icon={<Trash2 size={16} />}
                       >
-                        Delete
+                        Delete Workflow
                       </Button>
                     </div>
                   </div>

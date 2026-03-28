@@ -263,12 +263,12 @@ const PhotoUpload = () => {
       const response = await workflowService.createSession({ siteId: selectedSiteId || null })
       const newSessionId = response?.session_id
       if (!newSessionId) {
-        throw new Error('The survey was created, but no survey ID was returned.')
+        throw new Error('The workflow was created, but no workflow ID was returned.')
       }
       setCurrentSessionId(newSessionId)
       await refreshSessionHistory()
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Could not start a new survey.')
+      setError(err.response?.data?.message || err.message || 'Could not start a new workflow.')
     } finally {
       setIsCreatingSession(false)
     }
@@ -306,7 +306,7 @@ const PhotoUpload = () => {
   }
 
   const handleDiscardSession = async (sessionId) => {
-    if (!window.confirm('Clear the unfinished review work for this survey? This will remove unconfirmed annotations.')) {
+    if (!window.confirm('Clear the unfinished review work for this workflow? This will remove unconfirmed annotations.')) {
       return
     }
     
@@ -325,7 +325,7 @@ const PhotoUpload = () => {
       setPreviews([])
       await refreshSessionHistory()
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not clear the unfinished survey work. Please try again.')
+      setError(err.response?.data?.message || 'Could not clear the unfinished workflow work. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -337,15 +337,15 @@ const PhotoUpload = () => {
         <WorkflowStepper currentStep={1} />
         <div className="workflow-main">
           <div className="w-full">
-          <h1 className="page-title mb-2">Start a Survey</h1>
+          <h1 className="page-title mb-2">Start a Workflow</h1>
           <p className="page-subtitle mb-8">
-            Bring in survey photos, choose the site, and set the time of observation.
+            Bring in workflow photos, choose the site, and set the time of observation.
           </p>
 
           <Card className="mb-6 border-primary-200 bg-[linear-gradient(135deg,rgba(235,251,249,0.98)_0%,rgba(244,255,252,0.95)_100%)]">
             <Card.Header>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-primary-900">Recent Surveys</h3>
+                <h3 className="text-lg font-semibold text-primary-900">Recent Workflows</h3>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -361,7 +361,7 @@ const PhotoUpload = () => {
                     onClick={handleCreateSession}
                     disabled={isCreatingSession}
                   >
-                    {isCreatingSession ? 'Starting...' : 'Start New Survey'}
+                    {isCreatingSession ? 'Starting...' : 'Start New Workflow'}
                   </Button>
                 </div>
               </div>
@@ -369,13 +369,13 @@ const PhotoUpload = () => {
             <Card.Body>
               {currentSessionId && (
                 <p className="mb-4 text-sm text-primary-800">
-                  Current survey: <span className="font-semibold">{currentSessionId}</span>
+                  Current workflow: <span className="font-semibold">{currentSessionId}</span>
                 </p>
               )}
               {isLoadingSessions ? (
-                <p className="text-sm text-primary-800">Loading surveys...</p>
+                <p className="text-sm text-primary-800">Loading workflows...</p>
               ) : recentSurveys.length === 0 ? (
-                <p className="text-sm text-primary-800">No surveys yet. Start one here and your uploads will stay grouped together.</p>
+                <p className="text-sm text-primary-800">No workflows yet. Start one here and your uploads will stay grouped together.</p>
               ) : (
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {recentSurveys.map((session) => (
@@ -383,7 +383,7 @@ const PhotoUpload = () => {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-slate-900">
-                            {session.name || `Survey ${session.id.slice(-6)}`}
+                            {session.name || `Workflow ${session.id.slice(-6)}`}
                           </p>
                           <p className="mt-1 text-xs text-slate-600">
                             Status: {session.status} | Stage: {session.current_step}
@@ -399,7 +399,7 @@ const PhotoUpload = () => {
                             onClick={() => handleUseSessionForUpload(session.id)}
                             disabled={isSubmitting}
                           >
-                            Use This Survey
+                            Use This Workflow
                           </Button>
                           <Button
                             variant="secondary"
@@ -440,7 +440,7 @@ const PhotoUpload = () => {
             <div>
               <Card>
                 <Card.Header>
-                  <h2 className="text-lg font-semibold">Survey Photos</h2>
+                  <h2 className="text-lg font-semibold">Workflow Photos</h2>
                 </Card.Header>
                 <Card.Body>
                   <div className="cursor-pointer rounded-xl border-2 border-dashed border-primary-200 bg-primary-50/35 p-8 text-center transition-colors hover:border-primary-400 hover:bg-primary-50/60">

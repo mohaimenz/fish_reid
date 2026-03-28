@@ -127,7 +127,7 @@ const LandingPage = () => {
                     icon={<ArrowRight size={18} />}
                     className="shadow-[0_10px_24px_rgba(47,111,237,0.28)]"
                   >
-                    Upload Photo
+                    Start Tracking
                   </Button>
 
                 </div>

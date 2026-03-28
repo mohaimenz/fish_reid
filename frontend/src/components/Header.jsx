@@ -65,7 +65,7 @@ const Header = () => {
                   className={navItemClass}
                 >
                   <FolderOpen size={18} />
-                  <span>Surveys</span>
+                  <span>Workflows</span>
                 </NavLink>
                 <NavLink
                   to="/fishes"
