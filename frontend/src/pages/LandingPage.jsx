@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
-import rabbitfishBanner from '../photos/rabbitfish-banner.jpg'
+import rabbitfishBanner from '../photos/Gemini_Generated_Image_cvr12ecvr12ecvr1.png'
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -76,44 +76,50 @@ const LandingPage = () => {
     <div className="page-shell overflow-hidden pt-10 md:pt-14">
       <div className="page-container space-y-12">
         <section>
-          <Card className="relative min-h-[34rem] overflow-hidden border-slate-200 shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
+          <Card className="relative min-h-[30rem] overflow-hidden border-slate-200 shadow-[0_14px_32px_rgba(15,23,42,0.10)]">
             <img
               src={rabbitfishBanner}
               alt="Rabbitfish in reef habitat"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,37,69,0.62)_0%,rgba(19,64,116,0.46)_38%,rgba(15,118,110,0.16)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,37,69,0.62)_0%,rgba(19,64,116,0.46)_38%,rgba(15,118,110,0)_100%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(221,248,244,0.10),transparent_26%)]" />
 
-            <Card.Body className="relative z-10 flex h-full flex-col justify-end p-8 md:p-10 lg:p-12">
+            <Card.Body className="relative z-10 flex h-full flex-col justify-end p-8 md:p-10 lg:p-12 pt-32 md:pt-40">
               <div className="max-w-3xl">
                 <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                   <Sparkles size={14} />
-                  Built for reef survey teams
+                  Built for marine biologists
                 </div>
-
-                <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl">
-                  Turn reef survey photos into fish histories you can trust
+                <p className="mt-4 max-w-4xl text-sm leading-6 text-slate-100 md:text-base" >
+                  RabbitFish Tracker is an ML tool that detects, identifies, and tracks rabbitfish across reef visits.
+                </p>
+                <h1 className="mt-5 max-w-3xl text-4xl font-bold leading-tight text-white md:text-5xl" style={{ transform: 'translateY(-25px)' }}>
+                  Convert sightings into reliable tracking histories.
                 </h1>
 
-                <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-100 md:text-base">
-                  RabbitFish Tracker helps researchers organize survey photos, review detections,
-                  confirm who is who, record observed pairs, and follow individual fish across
-                  repeated visits to the reef.
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {['Upload', 'Detect', 'Identify', 'Pair', 'Track'].map((label) => (
-                    <span
-                      key={label}
-                      className="rounded-full border border-white/20 bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white"
-                    >
-                      {label}
-                    </span>
-                  ))}
+                <div className="mt-12" style={{ transform: 'translateY(-20px)' }}>
+                  <div className="flex items-center gap-0 overflow-x-auto">
+                    {['Upload', 'Detect', 'Identify', 'Pair', 'Track'].map((label, index) => (
+                      <div key={label} className="flex items-center flex-shrink-0">
+                        <div className="relative">
+                          <div className="relative bg-white/20 border border-white/25 px-6 py-0.5 text-center"
+                            style={{
+                              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)',
+                              minWidth: '100px'
+                            }}>
+                            <span className="text-sm font-bold text-white uppercase tracking-[0.08em]">{label}</span>
+                          </div>
+                        </div>
+                        {index < 4 && (
+                          <div className="w-3 h-0.5 bg-gradient-to-r from-white/40 to-white/20 mx-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-8 flex flex-wrap gap-3" style={{ transform: 'translateY(-25px)' }}>
                   <Button
                     size="lg"
                     variant="primary"
@@ -121,16 +127,9 @@ const LandingPage = () => {
                     icon={<ArrowRight size={18} />}
                     className="shadow-[0_10px_24px_rgba(47,111,237,0.28)]"
                   >
-                    Start a Survey
+                    Upload Photo
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => navigate('/how-it-works')}
-                    className="border-white/25 bg-white/10 text-white hover:border-white/35 hover:bg-white/16"
-                  >
-                    See the Research Flow
-                  </Button>
+
                 </div>
               </div>
             </Card.Body>
